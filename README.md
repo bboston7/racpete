@@ -25,6 +25,7 @@ What to do
     - tell me about
     - Get link title
     - Anything else you think may be fun
+- Configuration file parsing
 
 ### Low Priority ###
 - Multiserver support
