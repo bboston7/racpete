@@ -7,6 +7,9 @@ done.  Alternatively, if you want to work on something else, that's also cool.
 
 What to do
 ----------
+Look in the issues tab for specific ideas.  Alternatively, here's our higher
+level roadmap.
+
 ### High Priority ###
 - Basic irc networking support
     - CONNECT
