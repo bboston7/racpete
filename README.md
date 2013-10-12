@@ -12,7 +12,7 @@ level roadmap.
 
 ### High Priority ###
 - Basic irc networking support
-    - CONNECT
+    - ~~CONNECT~~ (Done as of 10/11/13)
     - JOIN
     - PONG
     - PART
