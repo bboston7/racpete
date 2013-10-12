@@ -32,6 +32,7 @@ Prints out data returned from the server
     (display (read-line input))
     (read-in)))
 
+; TODO: Move this stuff out into some sort of main file
 (identify)
 (read-in)
 
