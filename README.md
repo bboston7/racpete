@@ -38,3 +38,4 @@ Potentially Helpful Resources
 - [Super basic python IRC bot](http://travismccrea.com/2010/02/write-a-basic-python-irc-bot/)
 - [IRC Spec](http://tools.ietf.org/html/rfc2812)
 - [Racket networking docs](http://docs.racket-lang.org/net/)
+- [Simple scheme IRC bot](http://pastebin.com/RQUMFbC9)
