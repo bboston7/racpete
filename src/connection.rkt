@@ -29,17 +29,24 @@ Identifies with the IRC Server
     (write-string (string-append "JOIN #cse143\r\n") output)
     (flush-output output)))
 
+(define (clean-up-and-quit) (
+  (begin
+    (display "Cleaning up and quitting....")
+    (close-output-port output)
+    (close-input-port input))))
+
 #|
 Prints out data returned from the server
 |#
 (define (read-in)
   (define line (read-line input))
   (cond
-    []))
+    [(eof-object? line) (clean-up-and-quit)]
+    [#t (read-in)]))
 #|
-  (begin
-    (display (string-append (read-line input) "\n"))
-    (read-in)))
+;  (begin
+;    (display (string-append (read-line input) "\n"))
+;    (read-in)))
 |#
 
 ; TODO: Move this stuff out into some sort of main file
@@ -47,5 +54,3 @@ Prints out data returned from the server
 (join)
 (read-in)
 
-(close-output-port output)
-(close-input-port input)
