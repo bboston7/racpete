@@ -4,8 +4,8 @@
 ; TODO: Move these into a config file
 (define HOST "seattle.uwirc.com")
 (define PORT 6667)
-(define NICK "racpete_cool")
-(define IDENT "racpete_cool")
+(define NICK "racpete_cooler")
+(define IDENT "racpete_cooler")
 (define REALNAME "Rac Pete_cool")
 (define CHAN "#cse143")
 
@@ -40,14 +40,23 @@ Identifies with the IRC Server
 #|
 Prints out data returned from the server
 |#
-(define (read-in)
+(define (read-in privmsg-func)
   (define line (read-line input))
   (begin
     (cond
       [(eof-object? line) (clean-up-and-quit)]
-      [(regexp-match #rx"^PING" line) (ping-respond line)])
+      [(regexp-match #rx"^PING" line) (ping-respond line)]
+      [(regexp-match #rx"PRIVMSG" line) (handle-privmsg privmsg-func line)]
     (display (string-append line "\n"))
-    (read-in)))
+    (read-in))))
+
+#|
+Breaks apart and handles a privmsg
+
+fn - Function to pass nick and message to
+|#
+(define (handle-privmsg fn line)
+  (define tokens 
 
 #|
 Responds to a PING with a proper PONG
