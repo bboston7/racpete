@@ -28,9 +28,14 @@ Identifies with the IRC Server
 Prints out data returned from the server
 |#
 (define (read-in)
+  (define line (read-line input))
+  (cond
+    []))
+#|
   (begin
     (display (read-line input))
     (read-in)))
+|#
 
 ; TODO: Move this stuff out into some sort of main file
 (identify)
