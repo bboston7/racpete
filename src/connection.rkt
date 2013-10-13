@@ -76,6 +76,9 @@ Responds to a PING with a proper PONG
     (write-string (string-append str "\r\n") output)
     (flush-output output)))
 
+(define (print-private nick msg)
+  (display (string-append nick " : " msg)))
+
 (define (start-pete callback)
   (begin
     (identify)
