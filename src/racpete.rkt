@@ -1,5 +1,11 @@
 #!/usr/bin/racket
 #lang racket
 
-(define (log nick message))
+(require
+  "config.rkt"
+  "connection.rkt")
 
+(define (log nick message)
+  (display-to-file (string-append "<" nick ">" message) CHAN #:exists 'append))
+
+(start-pete)
