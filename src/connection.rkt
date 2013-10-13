@@ -1,13 +1,7 @@
 #!/usr/bin/racket
 #lang racket
 
-; TODO: Move these into a config file
-(define HOST "seattle.uwirc.com")
-(define PORT 6667)
-(define NICK "racpete_cool")
-(define IDENT "racpete_cool")
-(define REALNAME "Rac Pete_cool")
-(define CHAN "#cse143")
+(require "config.rkt")
 
 #|
 Sets input to the input stream from the server and output to the output stream
