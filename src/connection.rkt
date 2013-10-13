@@ -19,11 +19,17 @@ Identifies with the IRC Server
     (send-string (string-append "NICK " NICK))
     (send-string (string-append "USER " IDENT " 0 * :" REALNAME))))
 
+#|
+Joins the channel
+|#
 (define (join)
   (begin
     (sleep 1)
     (send-string (string-append "JOIN " CHAN))))
 
+#|
+Exits the program after cleaning up files/sockets
+|#
 (define (clean-up-and-quit)
   (begin
     (display "Cleaning up and quitting....")
@@ -31,11 +37,20 @@ Identifies with the IRC Server
     (close-input-port input)
     (exit)))
 
+#|
+Sends msg to the channel
+
+Parameters:
+    msg - Message to send to server
+|#
 (define (write-to-channel msg)
   (send-string (string-append "PRIVMSG " CHAN " :" msg)))
 
 #|
-Prints out data returned from the server
+Reads in, and handles messages from the server
+
+Parameters
+    privmsg-func - Function to call on receiving a PRIVMSG command.
 |#
 (define (read-in privmsg-func)
   (define line (read-line input))
@@ -46,11 +61,6 @@ Prints out data returned from the server
       [(regexp-match #rx"^.* PRIVMSG" line) (handle-privmsg privmsg-func line)])
     (display (string-append line "\n"))
     (read-in privmsg-func)))
-
-(define (is-privmsg line)
-  (begin
-    (display (cadr (string-split line)))
-    (equal? (cadr (string-split line)) "PRIVMSG")))
 
 #|
 Breaks apart and handles a privmsg
@@ -71,14 +81,23 @@ Responds to a PING with a proper PONG
   (begin
     (send-string (string-replace line "PING" "PONG"))))
 
+#|
+Sends str to the channel
+
+Parameters
+    str - string? to send to the server
+|#
 (define (send-string str)
   (begin
     (write-string (string-append str "\r\n") output)
     (flush-output output)))
 
-(define (print-private nick msg)
-  (display (string-append nick " : " msg)))
+#|
+Starts the pot
 
+Parameters
+    callback - Function to call back to on PRIVMSG from server
+|#
 (define (start-pete callback)
   (begin
     (identify)
