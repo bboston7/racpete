@@ -2,12 +2,12 @@
 #lang racket
 
 ; TODO: Move these into a config file
-(define HOST "irc.freenode.net")
+(define HOST "seattle.uwirc.com")
 (define PORT 6667)
-(define NICK "racpete")
-(define IDENT "racpete")
-(define REALNAME "Rac Pete")
-(define CHAN "")
+(define NICK "racpete_cool")
+(define IDENT "racpete_cool")
+(define REALNAME "Rac Pete_cool")
+(define CHAN "#cse143")
 
 #|
 Sets input to the input stream from the server and output to the output stream
@@ -29,8 +29,18 @@ Prints out data returned from the server
 |#
 (define (read-in)
   (define line (read-line input))
-  (cond
-    []))
+  (begin
+    (display (string-append line "\n"))
+    (cond
+      [(regexp-match #rx"^PING" line) (ping-respond line)])
+    (read-in)))
+
+#|
+Responds to a PING with a proper PONG
+|#
+(define (ping-respond line)
+  (write-string (string-replace line "PING" "PONG")))
+
 #|
   (begin
     (display (read-line input))
