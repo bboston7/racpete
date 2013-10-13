@@ -78,8 +78,8 @@ Responds to a PING with a proper PONG
 (define (print-private nick msg)
   (display (string-append nick " : " msg)))
 
-(define (start-pete)
+(define (start-pete callback)
   (begin
     (identify)
     (join)
-    (read-in)))
+    (read-in callback)))
