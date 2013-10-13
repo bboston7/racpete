@@ -16,15 +16,13 @@ Identifies with the IRC Server
 |#
 (define (identify)
   (begin
-    (write-string (string-append "NICK " NICK "\r\n") output)
-    (write-string (string-append "USER " IDENT " 0 * :" REALNAME "\r\n") output)
-    (flush-output output)))
+    (send-string (string-append "NICK " NICK))
+    (send-string (string-append "USER " IDENT " 0 * :" REALNAME))))
 
 (define (join)
   (begin
     (sleep 1)
-    (write-string (string-append "JOIN " CHAN "\r\n") output)
-    (flush-output output)))
+    (send-string (string-append "JOIN " CHAN))))
 
 (define (clean-up-and-quit)
   (begin
