@@ -2,7 +2,7 @@
 #lang racket
 
 ; TODO: Move these into a config file
-(define HOST "irc.freenode.net")
+(define HOST "seattle.uwirc.com")
 (define PORT 6667)
 (define NICK "racpete")
 (define IDENT "racpete")
@@ -24,16 +24,22 @@ Identifies with the IRC Server
     (write-string (string-append "USER " IDENT " 0 * :" REALNAME "\r\n") output)
     (flush-output output)))
 
+(define (join)
+  (begin
+    (write-string (string-append "JOIN #cse143\r\n") output)
+    (flush-output output)))
+
 #|
 Prints out data returned from the server
 |#
 (define (read-in)
   (begin
-    (display (read-line input))
+    (display (string-append (read-line input) "\n"))
     (read-in)))
 
 ; TODO: Move this stuff out into some sort of main file
 (identify)
+(join)
 (read-in)
 
 (close-output-port output)
