@@ -43,9 +43,12 @@ Prints out data returned from the server
     (cond
       [(eof-object? line) (clean-up-and-quit)]
       [(regexp-match #rx"^PING" line) (ping-respond line)]
-      [(regexp-match #rx"PRIVMSG" line) (handle-privmsg privmsg-func line)]
+      [(privmsg? line) (handle-privmsg privmsg-func line)])
     (display (string-append line "\n"))
-    (read-in))))
+    (read-in privmsg-func)))
+
+(define (privmsg? line)
+  (equal? (cadr (string-split line)) "PRIVMSG"))
 
 #|
 Breaks apart and handles a privmsg
@@ -53,7 +56,12 @@ Breaks apart and handles a privmsg
 fn - Function to pass nick and message to
 |#
 (define (handle-privmsg fn line)
-  (define tokens 
+  (define tokens (string-split line ":"))
+  (define nick (car (string-split (car tokens) "!")))
+  (define msg (cadr tokens))
+  (begin
+    (display "entered handle-privmsg")
+    (fn nick msg)))
 
 #|
 Responds to a PING with a proper PONG
@@ -67,9 +75,11 @@ Responds to a PING with a proper PONG
     (write-string (string-append str "\r\n") output)
     (flush-output output)))
 
+(define (print-private nick msg)
+  (display (string-append nick " : " msg)))
+
 (define (start-pete)
   (begin
     (identify)
     (join)
     (read-in)))
-
