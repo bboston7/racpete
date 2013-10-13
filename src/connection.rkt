@@ -26,7 +26,8 @@ Identifies with the IRC Server
 
 (define (join)
   (begin
-    (write-string (string-append "JOIN #cse143\r\n") output)
+    (sleep 1)
+    (write-string (string-append "JOIN " CHAN "\r\n") output)
     (flush-output output)))
 
 (define (clean-up-and-quit) (
@@ -42,17 +43,25 @@ Prints out data returned from the server
 (define (read-in)
   (define line (read-line input))
   (begin
-    (display (string-append line "\n"))
     (cond
       [(eof-object? line) (clean-up-and-quit)]
       [(regexp-match #rx"^PING" line) (ping-respond line)])
+    (display (string-append line "\n"))
     (read-in)))
 
 #|
 Responds to a PING with a proper PONG
 |#
 (define (ping-respond line)
-  (write-string (string-replace line "PING" "PONG")))
+  (begin
+    (display "Entered ping-respond")
+    (send-string (string-replace line "PING" "PONG"))))
+
+(define (send-string str)
+  (begin
+    (display (string-append "Sending " str "\n"))
+    (write-string (string-append str "\r\n") output)
+    (flush-output output)))
 
 ; TODO: Move this stuff out into some sort of main file
 (identify)
