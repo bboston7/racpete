@@ -2,9 +2,9 @@
 
 (provide (all-defined-out))
 
-(define HOST "seattle.uwirc.com")
+(define HOST "irc.adelais.net")
 (define PORT 6667)
-(define NICK "swagofile")
-(define IDENT "racpete_cool")
-(define REALNAME "Rac Pete_cool")
-(define CHAN "#cse143")
+(define NICK "frankenpete")
+(define IDENT "racpete")
+(define REALNAME "frunkenpete")
+(define CHAN "#stackunderflow")

@@ -12,4 +12,8 @@
 (define (print-private nick msg)
   (display (string-append nick " : " msg "\n")))
 
-(start-pete log)
+(define (command-handler nick msg)
+  (cond
+    [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]))
+
+(start-pete command-handler)
