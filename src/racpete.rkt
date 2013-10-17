@@ -24,18 +24,29 @@ Builds a list of quotes from the current channel log
 
 (define quotes (build-quotes))
 
+#|
+Log a line from the chat
+|#
 (define (log nick message)
   (let ([line (string-append "<" nick ">" message)])
     (begin
       (set! quotes (cons line quotes))
       (display-to-file (string-append line "\n")
-                       (string-append CHAN ".log") #:exists 'append))
+                       (string-append CHAN ".log") #:exists 'append))))
 
 (define (print-private nick msg)
   (display (string-append nick " : " msg "\n")))
 
+#|
+Handles incomming user irc commands
+|#
 (define (command-handler nick msg)
   (cond
-    [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]))
+    [(equal? ".q" msg) (write-to-channel (get-random-quote))]
+    [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
+    [else (log nick msg)]))
+
+(define (get-random-quote)
+  (list-ref quotes (random (length quotes))))
 
 (start-pete command-handler)

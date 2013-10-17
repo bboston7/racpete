@@ -24,7 +24,7 @@ Joins the channel
 |#
 (define (join)
   (begin
-    (sleep 1)
+    (sleep 5)
     (send-string (string-append "JOIN " CHAN))))
 
 #|
@@ -58,7 +58,8 @@ Parameters
     (cond
       [(eof-object? line) (clean-up-and-quit)]
       [(regexp-match #rx"^PING" line) (ping-respond line)]
-      [(regexp-match #rx"^.* PRIVMSG" line) (handle-privmsg privmsg-func line)])
+      [(regexp-match #rx"^.* PRIVMSG" line)
+       (handle-privmsg privmsg-func (string-trim line))])
     (display (string-append line "\n"))
     (read-in privmsg-func)))
 

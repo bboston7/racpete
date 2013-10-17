@@ -2,9 +2,9 @@
 
 (provide (all-defined-out))
 
-(define HOST "seattle.uwirc.com")
+(define HOST "")
 (define PORT 6667)
-(define NICK "frankenpete")
+(define NICK "racpete")
 (define IDENT "racpete")
-(define REALNAME "frunkenpete")
-(define CHAN "#troom")
+(define REALNAME "racpete")
+(define CHAN "")
