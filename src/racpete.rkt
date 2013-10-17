@@ -25,8 +25,11 @@ Builds a list of quotes from the current channel log
 (define quotes (build-quotes))
 
 (define (log nick message)
-  (display-to-file (string-append "<" nick "> " message "\n")
-                   (string-append CHAN ".log") #:exists 'append))
+  (let ([line (string-append "<" nick ">" message)])
+    (begin
+      (set! quotes (cons line quotes))
+      (display-to-file (string-append line "\n")
+                       (string-append CHAN ".log") #:exists 'append))
 
 (define (print-private nick msg)
   (display (string-append nick " : " msg "\n")))
