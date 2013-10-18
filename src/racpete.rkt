@@ -4,6 +4,10 @@
 (require
   "config.rkt"
   "connection.rkt")
+(require
+  html
+  xml
+  net/url)
 
 #|
 Builds a list of quotes from the current channel log
@@ -37,6 +41,24 @@ Log a line from the chat
 (define (print-private nick msg)
   (display (string-append nick " : " msg "\n")))
 
+(define (get-website-title url-string)
+  (letrec ([get-html (lambda (url-string)
+                    (read-html (get-pure-port (string->url url-string))))]
+         [get-title-tag-text
+           (lambda (html-blobs)
+             (cond [(null? html-blobs)
+                    "OH FUCK WHERE IS THE TITLE?!!?"]
+                   [(title? (car html-blobs))
+                    (html-full-content (car html-blobs))]
+                   [(html-element? (car html-blobs))
+                           (append (cdr html-blobs) (html-full-content (car html-blobs))))]))])
+                   [else (get-title-tag-text
+                           (append (cdr html-blobs)
+                                   (html-full-content (car html-blobs))))]))])
+    (get-title-tag-text (list (get-html url-string)))))
+
+(display (string-append (get-website-title "http://www.maxsherman.com") "\n"))
+
 #|
 Handles incomming user irc commands
 |#
@@ -49,4 +71,4 @@ Handles incomming user irc commands
 (define (get-random-quote)
   (list-ref quotes (random (length quotes))))
 
-(start-pete command-handler)
+;(start-pete command-handler)
