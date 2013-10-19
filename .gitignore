@@ -1,1 +1,4 @@
+*.log
 *.swp
+
+src/config.rkt
