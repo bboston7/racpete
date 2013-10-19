@@ -46,29 +46,49 @@ Log a line from the chat
                     (read-html (get-pure-port (string->url url-string))))]
          [get-title-tag-text
            (lambda (html-blobs)
-             (cond [(null? html-blobs)
-                    "OH FUCK WHERE IS THE TITLE?!!?"]
-                   [(title? (car html-blobs))
-                    (html-full-content (car html-blobs))]
-                   [(html-element? (car html-blobs))
-                           (append (cdr html-blobs) (html-full-content (car html-blobs))))]))])
-                   [else (get-title-tag-text
-                           (append (cdr html-blobs)
-                                   (html-full-content (car html-blobs))))]))])
+             (cond
+               ; Case 1: We didn't find a title.
+               [(null? html-blobs) "OH FUCK WHERE IS THE TITLE?!!?"]
+
+               ; Case 2: Found title node, return it.
+               [(title? (car html-blobs))
+                (foldl (lambda (x y)
+                         (let ([pcdata-or-string
+                                 (lambda (x)
+                                   (if (pcdata? x) (pcdata-string x) x))])
+                           (string-append (pcdata-or-string x)
+                                          (pcdata-or-string y))))
+                       ""
+                       (html-full-content (car html-blobs)))]
+
+               ; Case 3: No title yet, add DOM nodes to list and recurse.
+               [else (get-title-tag-text
+                       (append (cdr html-blobs)
+                               (filter html-full?
+                                       (html-full-content
+                                         (car html-blobs)))))]))])
     (get-title-tag-text (list (get-html url-string)))))
 
-(display (string-append (get-website-title "http://www.maxsherman.com") "\n"))
+;(display (string-append (get-website-title "https://www.google.com") "\n"))
+;(display (string-append (get-website-title "http://www.aldkfjaldfkj.com") "\n"))
+;(display (string-append (get-website-title "http://www.youtube.com/watch?v=OGzxF_qInPQ") "\n"))
 
 #|
 Handles incomming user irc commands
 |#
 (define (command-handler nick msg)
-  (cond
-    [(equal? ".q" msg) (write-to-channel (get-random-quote))]
-    [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
-    [else (log nick msg)]))
+  (let ([urlres (regexp-match
+                  #px"https?://([\\da-zA-Z.]+)\\.([a-zA-Z.]{2,6})[/\\w.-]*/?"
+                  msg)])
+    (begin (display (string-append msg "\n"))
+    (cond
+      [(equal? ".q" msg) (write-to-channel (get-random-quote))]
+      [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
+      [urlres (begin (display "hi\n") (write-to-channel (get-website-title (car
+                                                                             urlres))))]
+      [else (log nick msg)]))))
 
 (define (get-random-quote)
   (list-ref quotes (random (length quotes))))
 
-;(start-pete command-handler)
+(start-pete command-handler)
