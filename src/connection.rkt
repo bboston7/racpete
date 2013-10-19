@@ -3,7 +3,9 @@
 
 (require "config.rkt")
 
-(provide start-pete write-to-channel)
+(provide
+  start-pete
+  write-to-channel)
 
 #|
 Sets input to the input stream from the server and output to the output stream
@@ -71,7 +73,7 @@ fn - Function to pass nick and message to
 (define (handle-privmsg fn line)
   (define tokens (string-split line ":"))
   (define nick (car (string-split (car tokens) "!")))
-  (define msg (cadr tokens))
+  (define msg (string-join (cdr tokens) ":"))
   (begin
     (fn nick msg)))
 
@@ -94,7 +96,7 @@ Parameters
     (flush-output output)))
 
 #|
-Starts the pot
+Starts the bot
 
 Parameters
     callback - Function to call back to on PRIVMSG from server
