@@ -42,13 +42,44 @@ Handles incomming user irc commands
   (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(equal? ".q" msg) (write-to-channel (get-random-quote))]
+      [(regexp-match #rx"^tell me about" msg)
+       (let ([out (learn-about msg)])
+         (and out (write-to-channel out)))]
       [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (if (equal? title "") "" (write-to-channel title))
                        (log nick msg)))]
       [else (log nick msg)])))
 
+#|
+Returns the message portion of an irc log line
+|#
+(define (get-message line)
+  (string-join (cdr (string-split line))))
+
+#|
+Returns a true value if token is in str
+|#
+(define (string-contains str token)
+  (regexp-match (regexp (string-downcase token)) (string-downcase str)))
+
+#|
+Returns a random quote from the logs
+|#
 (define (get-random-quote)
   (list-ref quotes (random (length quotes))))
+
+
+#|
+Given a string, returns a quote containing that string
+|#
+(define (learn-about msg)
+  (let ([token (string-append " " (string-join (cdddr (string-split msg))))])
+    (if (equal? (string-trim token) "")
+      #f
+      (let ([matches (filter (lambda (x) (string-contains x token)) quotes)])
+        (if (null? matches)
+          (string-append "Cache miss!  Tell me about" token)
+          (get-message (list-ref matches (random (length matches)))))))))
 
 (start-pete command-handler)
