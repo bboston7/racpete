@@ -4,7 +4,8 @@
 (require
   "config.rkt"
   "connection.rkt"
-  "urltilities.rkt")
+  "urltilities.rkt"
+  "ycombinator.rkt")
 
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr
@@ -60,6 +61,8 @@ Handles incomming user irc commands
        (let ([out (learn-about msg)])
          (and out (write-to-channel out)))]
       [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
+      [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
+                                          (write-to-channel yc3) (write-to-channel yc4))]
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (write-to-channel title) (log nick msg)))]
       [else (log nick msg)])))
