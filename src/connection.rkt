@@ -46,7 +46,8 @@ Parameters:
     msg - Message to send to server
 |#
 (define (write-to-channel msg)
-  (send-string (string-append "PRIVMSG " CHAN " :" msg)))
+  (when (not (equal? msg ""))
+    (send-string (string-append "PRIVMSG " CHAN " :" msg))))
 
 #|
 Reads in, and handles messages from the server

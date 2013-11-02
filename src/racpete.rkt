@@ -7,23 +7,29 @@
   "urltilities.rkt")
 
 #|
-Builds a list of quotes from the current channel log
+Builds a pair of lists.  The car is quotes from the current channel log, the cdr
+is urls from the current channel log
 |#
-(define (build-quotes)
+(define (build-quotes-and-urls)
   (letrec ([log-file (open-input-file (string-append CHAN ".log") #:mode 'text)]
          ; Tail recursive because log files get large!
          ; Unfortunately, that means the list is backwards, this doesn't matter
          ; now, and since we don't store date information in our logs, maybe it
          ; never will
          [tail-fn
-           (lambda (acc)
+           (lambda (quotes-acc url-acc)
              (let ([line (read-line log-file)])
                (if (eof-object? line)
-                 acc
-                 (tail-fn (cons line acc)))))])
-    (tail-fn null)))
+                 (cons quotes-acc url-acc)
+                 (let ([url-match (regexp-match urlregex line)])
+                   (if url-match
+                     (tail-fn (cons line quotes-acc) (cons (car url-match) url-acc))
+                     (tail-fn (cons line quotes-acc) url-acc))))))])
+    (tail-fn null null)))
 
-(define quotes (build-quotes))
+(define quotes-and-urls (build-quotes-and-urls))
+(define quotes (car quotes-and-urls))
+(define links (cdr quotes-and-urls))
 
 #|
 Log a line from the chat
@@ -32,6 +38,9 @@ Log a line from the chat
   (let ([line (string-append "<" nick "> " message)])
     (begin
       (set! quotes (cons line quotes))
+      (let ([url-match (regexp-match urlregex line)])
+        (when url-match
+          (set! links (cons (car url-match) links))))
       (display-to-file (string-append line "\n")
                        (string-append CHAN ".log") #:exists 'append))))
 
@@ -41,14 +50,18 @@ Handles incomming user irc commands
 (define (command-handler nick msg)
   (let ([urlres (regexp-match urlregex msg)])
     (cond
-      [(equal? ".q" msg) (write-to-channel (get-random-quote))]
+      [(equal? ".q" msg) (write-to-channel (get-random-line quotes))]
+      [(equal? ".link me" msg) (let* ([url (get-random-line links)]
+                                     [title (get-website-title url)])
+                                 (begin
+                                   (write-to-channel url)
+                                   (write-to-channel title)))]
       [(regexp-match #rx"^tell me about" msg)
        (let ([out (learn-about msg)])
          (and out (write-to-channel out)))]
       [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
       [urlres (let ([title (get-website-title (car urlres))])
-                (begin (if (equal? title "") "" (write-to-channel title))
-                       (log nick msg)))]
+                (begin (write-to-channel title) (log nick msg)))]
       [else (log nick msg)])))
 
 #|
@@ -64,10 +77,10 @@ Returns a true value if token is in str
   (regexp-match (regexp (string-downcase token)) (string-downcase str)))
 
 #|
-Returns a random quote from the logs
+Returns a random line from the passed list
 |#
-(define (get-random-quote)
-  (list-ref quotes (random (length quotes))))
+(define (get-random-line lst)
+  (list-ref lst (random (length lst))))
 
 
 #|
