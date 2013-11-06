@@ -52,7 +52,7 @@ Handles incomming user irc commands
   (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(equal? ".q" msg) (write-to-channel (get-random-line quotes))]
-      [(equal? "(y)" msg) (write-to-channel (string-append "I hate you " nick)]
+      [(equal? "(y)" msg) (write-to-channel (string-append "I hate you " nick))]
       [(equal? ".link me" msg) (let* ([url (get-random-line links)]
                                      [title (get-website-title url)])
                                  (begin
