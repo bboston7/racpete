@@ -1,7 +1,7 @@
 #!/usr/bin/racket
 #lang racket
 
-(require "config.rkt")
+(require "../config.rkt")
 
 (provide
   start-pete

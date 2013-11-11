@@ -13,8 +13,11 @@ Builds a pair of lists.  The car is quotes from the current channel log, the cdr
 is urls from the current channel log
 |#
 (define (build-quotes-and-urls)
-  (letrec ([log-file
-             (open-input-file (string-append "logs/" CHAN ".log") #:mode 'text)]
+  (letrec ([file-name (string-append "logs/" CHAN ".log")]
+           [log-file
+             (if (file-exists? file-name)
+               (open-input-file file-name #:mode 'text)
+               #f)]
          ; Tail recursive because log files get large!
          ; Unfortunately, that means the list is backwards, this doesn't matter
          ; now, and since we don't store date information in our logs, maybe it
@@ -28,7 +31,11 @@ is urls from the current channel log
                    (if url-match
                      (tail-fn (cons line quotes-acc) (cons (car url-match) url-acc))
                      (tail-fn (cons line quotes-acc) url-acc))))))])
-    (tail-fn null null)))
+    (if log-file
+      (begin0
+        (tail-fn null null)
+        (close-input-port log-file))
+      (cons null null))))
 
 (define quotes-and-urls (build-quotes-and-urls))
 (define quotes (car quotes-and-urls))
@@ -45,7 +52,7 @@ Log a line from the chat
         (when url-match
           (set! links (cons (car url-match) links))))
       (display-to-file (string-append line "\n")
-                       (string-append CHAN ".log") #:exists 'append))))
+                       (string-append "logs/" CHAN ".log") #:exists 'append))))
 
 #|
 Handles incomming user irc commands
