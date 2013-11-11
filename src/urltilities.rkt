@@ -28,29 +28,32 @@ Parameters
   (letrec ([retrieved-html (with-handlers
                              ([exn:fail? (lambda (e) "")])
                              (get-pure-port (string->url url-string)))]
-         [get-title-tag-text
-           (lambda (html-blobs)
-             (cond
-               ; Case 1: We didn't find a title.
-               [(null? html-blobs) ""]
+           [get-title-tag-text
+             (lambda (html-blobs)
+               (cond
+                 ; Case 1: We didn't find a title.
+                 [(null? html-blobs) ""]
 
-               ; Case 2: Found title node, return it.
-               [(title? (car html-blobs))
-                (foldl (lambda (x y)
-                         (let ([pcdata-or-string
-                                 (lambda (x)
-                                   (if (pcdata? x) (pcdata-string x) x))])
-                           (string-append (pcdata-or-string x)
-                                          (pcdata-or-string y))))
-                       ""
-                       (html-full-content (car html-blobs)))]
+                 ; Case 2: Found title node, return it.
+                 [(title? (car html-blobs))
+                  (foldr (lambda (x y)
+                           (let ([webdata->string
+                                   (lambda (x)
+                                     (cond [(pcdata? x) (pcdata-string x)]
+                                           [(entity? x) (make-string 1 (integer->char (entity-text x)))]
+                                           [(string? x) x]
+                                           [else ""]))])
+                             (string-append (webdata->string x)
+                                            (webdata->string y))))
+                         ""
+                         (html-full-content (car html-blobs)))]
 
-               ; Case 3: No title yet, add DOM nodes to list and recurse.
-               [else (get-title-tag-text
-                       (append (cdr html-blobs)
-                               (filter html-full?
-                                       (html-full-content
-                                         (car html-blobs)))))]))])
+                 ; Case 3: No title yet, add DOM nodes to list and recurse.
+                 [else (get-title-tag-text
+                         (append (cdr html-blobs)
+                                 (filter html-full?
+                                         (html-full-content
+                                           (car html-blobs)))))]))])
     (if (equal? retrieved-html "")
       ""
       (string-trim (get-title-tag-text (list (read-html retrieved-html)))))))

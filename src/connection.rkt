@@ -45,9 +45,18 @@ Sends msg to the channel
 Parameters:
     msg - Message to send to server
 |#
-(define (write-to-channel msg)
+(define (write-to-channel msg) (write-to-thing msg CHAN))
+
+#|
+Sends msg to thing, which can be a user or the channel
+
+Parameters:
+    msg - Message to send to server
+    thing - Channel or a nick
+|#
+(define (write-to-thing msg thing)
   (when (not (equal? msg ""))
-    (send-string (string-append "PRIVMSG " CHAN " :" msg))))
+    (send-string (string-append "PRIVMSG " thing " :" msg))))
 
 #|
 Reads in, and handles messages from the server
@@ -61,7 +70,7 @@ Parameters
     (cond
       [(eof-object? line) (clean-up-and-quit)]
       [(regexp-match #rx"^PING" line) (ping-respond line)]
-      [(regexp-match #rx"^.* PRIVMSG" line)
+      [(regexp-match (string-append "^.* PRIVMSG " CHAN) line)
        (handle-privmsg privmsg-func (string-trim line))])
     (display (string-append line "\n"))
     (read-in privmsg-func)))
