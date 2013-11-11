@@ -71,7 +71,7 @@ Handles incomming user irc commands
       [(string-starts-with? msg "tell me about")
        (let ([out (learn-about msg)])
          (and out (write-to-channel out)))]
-      [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
+      [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
       [urlres (let ([title (get-website-title (car urlres))])
@@ -102,5 +102,12 @@ Given a string, returns a quote containing that string
         (if (null? matches)
           (string-append "Cache miss!  Tell me about" token)
           (get-message (list-ref matches (random (length matches)))))))))
+
+#|
+Quits the server after checking permissions of the caller
+|#
+(define (die nick)
+  (and (ormap (lambda (op) (equal? nick op)) OPS)
+       (clean-up-and-quit)))
 
 (start-pete command-handler)

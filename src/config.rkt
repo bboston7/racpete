@@ -8,3 +8,4 @@
 (define IDENT "racpete")
 (define REALNAME "racpete")
 (define CHAN "")
+(define OPS null) ; This is a terrible way of doing authentication

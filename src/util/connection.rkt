@@ -4,6 +4,7 @@
 (require "../config.rkt")
 
 (provide
+  clean-up-and-quit
   start-pete
   write-to-channel)
 
@@ -35,9 +36,16 @@ Exits the program after cleaning up files/sockets
 (define (clean-up-and-quit)
   (begin
     (display "Cleaning up and quitting....")
+    (quit "told to die")
     (close-output-port output)
     (close-input-port input)
     (exit)))
+
+#|
+Quits with the message msg
+|#
+(define (quit msg)
+  (send-string (string-append "QUIT :" msg)))
 
 #|
 Sends msg to the channel
