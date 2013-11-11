@@ -108,6 +108,7 @@ Quits the server after checking permissions of the caller
 |#
 (define (die nick)
   (and (ormap (lambda (op) (equal? nick op)) OPS)
+       (quit "told to die")
        (clean-up-and-quit)))
 
 (start-pete command-handler)
