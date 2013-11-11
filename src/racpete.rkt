@@ -4,6 +4,7 @@
 (require
   "config.rkt"
   "connection.rkt"
+  "util/string-utils.rkt"
   "urltilities.rkt"
   "ycombinator.rkt")
 
@@ -59,7 +60,7 @@ Handles incomming user irc commands
                                  (begin
                                    (write-to-channel url)
                                    (write-to-channel title)))]
-      [(regexp-match #rx"^tell me about" msg)
+      [(string-starts-with? msg "tell me about")
        (let ([out (learn-about msg)])
          (and out (write-to-channel out)))]
       [(regexp-match #rx"^\\.die" msg) (write-to-channel "please don't kill me")]
@@ -76,12 +77,6 @@ Returns the message portion of an irc log line
   (string-join (cdr (string-split line))))
 
 #|
-Returns a true value if token is in str
-|#
-(define (string-contains str token)
-  (regexp-match (regexp (string-downcase token)) (string-downcase str)))
-
-#|
 Returns a random line from the passed list
 |#
 (define (get-random-line lst)
@@ -95,7 +90,7 @@ Given a string, returns a quote containing that string
   (let ([token (string-append " " (string-join (cdddr (string-split msg))))])
     (if (equal? (string-trim token) "")
       #f
-      (let ([matches (filter (lambda (x) (string-contains x token)) quotes)])
+      (let ([matches (filter (lambda (x) (string-contains? x token)) quotes)])
         (if (null? matches)
           (string-append "Cache miss!  Tell me about" token)
           (get-message (list-ref matches (random (length matches)))))))))
