@@ -37,12 +37,22 @@ Parameters
                  ; Case 2: Found title node, return it.
                  [(title? (car html-blobs))
                   (foldr (lambda (x y)
-                           (let ([webdata->string
-                                   (lambda (x)
-                                     (cond [(pcdata? x) (pcdata-string x)]
-                                           [(entity? x) (make-string 1 (integer->char (entity-text x)))]
-                                           [(string? x) x]
-                                           [else ""]))])
+                           (let*
+                             ([symbol->str (lambda (c)
+                                             (cond [(equal? c 'nbsp) "  "]
+                                                   [else " "]))]
+                              [webdata->string
+                                (lambda (x)
+                                  (cond [(pcdata? x) (pcdata-string x)]
+                                        [(entity? x)
+                                         (let ([ent (entity-text x)])
+                                           (if (valid-char? ent)
+                                             (make-string
+                                               1
+                                               (integer->char ent))
+                                             (symbol->str ent)))]
+                                        [(string? x) x]
+                                        [else ""]))])
                              (string-append (webdata->string x)
                                             (webdata->string y))))
                          ""
