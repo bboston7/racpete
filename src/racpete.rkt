@@ -2,18 +2,19 @@
 #lang racket
 
 (require
+  "commands/ycombinator.rkt"
   "config.rkt"
-  "connection.rkt"
+  "util/connection.rkt"
   "util/string-utils.rkt"
-  "urltilities.rkt"
-  "ycombinator.rkt")
+  "util/urltilities.rkt")
 
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr
 is urls from the current channel log
 |#
 (define (build-quotes-and-urls)
-  (letrec ([log-file (open-input-file (string-append CHAN ".log") #:mode 'text)]
+  (letrec ([log-file
+             (open-input-file (string-append "logs/" CHAN ".log") #:mode 'text)]
          ; Tail recursive because log files get large!
          ; Unfortunately, that means the list is backwards, this doesn't matter
          ; now, and since we don't store date information in our logs, maybe it
