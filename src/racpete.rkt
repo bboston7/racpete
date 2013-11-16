@@ -8,6 +8,8 @@
   "util/string-utils.rkt"
   "util/urltilities.rkt")
 
+(define UPDATE-EXIT-CODE 2)
+
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr
 is urls from the current channel log
@@ -76,6 +78,7 @@ Handles incomming user irc commands
                                           (write-to-channel yc3) (write-to-channel yc4))]
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (write-to-channel title) (log nick msg)))]
+      [(equal? ".update" msg) (update nick)]
       [else (log nick msg)])))
 
 #|
@@ -107,8 +110,18 @@ Given a string, returns a quote containing that string
 Quits the server after checking permissions of the caller
 |#
 (define (die nick)
+  ; TODO: Factor this out into some sort of auth module.
   (and (ormap (lambda (op) (equal? nick op)) OPS)
        (quit "told to die")
        (clean-up-and-quit)))
+
+#|
+Exits, updates from git, then rejoins
+|#
+(define (update nick)
+  ; TODO: Factor this out into some sort of auth module.
+  (and (ormap (lambda (op) (equal? nick op)) OPS)
+       (quit "I'M GITTIN' AN UPGRADE MA")
+       (clean-up-and-quit UPDATE-EXIT-CODE)))
 
 (start-pete command-handler)

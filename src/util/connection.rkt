@@ -34,12 +34,12 @@ Joins the channel
 #|
 Exits the program after cleaning up files/sockets
 |#
-(define (clean-up-and-quit)
+(define (clean-up-and-quit [code 0])
   (begin
     (display "Cleaning up and quitting....")
     (close-output-port output)
     (close-input-port input)
-    (exit)))
+    (exit code)))
 
 #|
 Quits with the message msg
