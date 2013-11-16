@@ -6,6 +6,23 @@
 This module provides utilities relating to morse code.
 |#
 
+(define (contains-morse (line) (regexp-match contains-morse-pattern line)))
+
+(define (convert (s)
+                 (let ([wordlist (string-split s "  ")]
+                       [assocdr (lambda (v lst)
+                                  (cond
+                                    [(null? lst) #f]
+                                    [(equal? (cdar lst) v) (caar lst)]
+                                    [else (assocdr v (cdr lst))]))]
+                       [convert-char (lambda (s) 
+
+; Regex to match a line if line contains morse code.
+(define contains-morse-pattern #px"[-. ]{5}")
+
+; Regex to parse out the morse code from a line.
+(define get-morse-pattern #px"[-. ]+")
+
 (define morse-map
   (list
     (cons "a" ".-")
