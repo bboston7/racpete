@@ -79,6 +79,7 @@ Handles incomming user irc commands
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (write-to-channel title) (log nick msg)))]
       [(equal? ".update" msg) (update nick)]
+      [(equal? ".test" msg) (write-to-channel "caught .test")]
       [else (log nick msg)])))
 
 #|
