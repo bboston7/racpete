@@ -8,7 +8,7 @@ cd $BASEDIR/src
 
 ./racpete.rkt 2> error.log
 
-while [ $? -eq 2 ]
+while [ $? -eq $UPDATE ]
 do
     git pull origin master
     ./racpete.rkt 2> error.log
