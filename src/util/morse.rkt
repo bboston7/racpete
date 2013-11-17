@@ -4,6 +4,7 @@
   parse-morse
   contains-morse?
   convert-morse
+  string->morse
 )
 
 #|
@@ -53,6 +54,20 @@ Get longest matching morse string from a line.
            (helper (string-split words "  ") "")))])
   (string-trim (morsewords->str s) #:right? #f)))
 
+#|
+Takes an english string and converts it to a morse string.
+|#
+(define (string->morse s)
+  (let
+    ([strchar->morsechar
+       (lambda (c) (let ([lookup (assoc c morse-map)])
+                     (if (lookup)
+                       (cond
+                         [(equal? (cdr lookup) " ") "  "]
+                         [else (string-append " " (cdr lookup))])
+                       (string-append " " c))))])
+    (string-append (strchar->morsechar (substring s 0 1))
+                   (string->morse (substring s 1)))))
 
 ; Like assoc but compares v with each cdr, and returns car.  Failure gives back "".
 (define (assocdr v lst)

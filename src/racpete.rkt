@@ -78,6 +78,7 @@ Handles incomming user irc commands
       [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
+      [(equal? ".morse" msg) (write-to-channel (string->morse msg))]
       [(contains-morse? msg) (begin
                                (write-to-channel (convert-morse (parse-morse msg)))
                                (log nick msg))]
