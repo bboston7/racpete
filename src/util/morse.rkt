@@ -66,8 +66,10 @@ Takes an english string and converts it to a morse string.
                          [(equal? (cdr lookup) " ") "  "]
                          [else (string-append " " (cdr lookup))])
                        (string-append " " c))))])
-    (string-append (strchar->morsechar (substring s 0 1))
-                   (string->morse (substring s 1)))))
+    (if (equal? s "")
+      ""
+      (string-append (strchar->morsechar (substring s 0 1))
+                     (string->morse (substring s 1))))))
 
 ; Like assoc but compares v with each cdr, and returns car.  Failure gives back "".
 (define (assocdr v lst)
