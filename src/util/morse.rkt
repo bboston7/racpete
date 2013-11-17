@@ -1,21 +1,59 @@
 #lang racket
 
-;(provide )
+(provide
+  parse-morse
+  contains-morse?
+  convert-morse
+)
 
 #|
 This module provides utilities relating to morse code.
+
+A note on the semantics of morse code:  For our purposes, morse code is parsed
+letter-by-letter, where letters are separated by a single space, and words are
+separated by two spaces.
 |#
 
-(define (contains-morse (line) (regexp-match contains-morse-pattern line)))
+(define (parse-morse line) (car (regexp-match get-morse-pattern line)))
 
-(define (convert (s)
-                 (let ([wordlist (string-split s "  ")]
-                       [assocdr (lambda (v lst)
-                                  (cond
-                                    [(null? lst) #f]
-                                    [(equal? (cdar lst) v) (caar lst)]
-                                    [else (assocdr v (cdr lst))]))]
-                       [convert-char (lambda (s) 
+(define (contains-morse? line) (regexp-match contains-morse-pattern line))
+
+(define (convert-morse s)
+  (let*
+     ; Converts morse character to english.  "" on failure.
+     ([morse->charstr (lambda (m) (assocdr m morse-map))]
+
+     ; Converts a morse word to an english word.  Malformed characters become "".
+     [morseword->str
+       (lambda (m)
+         (letrec ([helper (lambda (lst acc)
+                            (if (null? lst)
+                              acc
+                              (helper (cdr lst)
+                                      (string-append
+                                        acc
+                                        (morse->charstr (car lst))))))])
+         (helper (string-split m) "")))]
+
+     ; Takes a string of morse words and converts to english string.
+     [morsewords->str
+       (lambda (words)
+         (letrec ([helper (lambda (lst acc)
+                            (if (null? lst)
+                              acc
+                              (helper (cdr lst)
+                                      (string-append acc " "
+                                        (morseword->str (car lst))))))])
+           (helper (string-split words "  ") "")))])
+  (string-trim (morsewords->str s) #:right? #f)))
+
+
+; Like assoc but compares v with each cdr, and returns car.  Failure gives back "".
+(define (assocdr v lst)
+  (cond
+    [(null? lst) ""]
+    [(equal? (cdar lst) v) (caar lst)]
+    [else (assocdr v (cdr lst))]))
 
 ; Regex to match a line if line contains morse code.
 (define contains-morse-pattern #px"[-. ]{5}")

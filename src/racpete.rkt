@@ -6,7 +6,9 @@
   "config.rkt"
   "util/connection.rkt"
   "util/string-utils.rkt"
-  "util/urltilities.rkt")
+  "util/urltilities.rkt"
+  "util/morse.rkt"
+)
 
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr
@@ -74,6 +76,7 @@ Handles incomming user irc commands
       [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
+      [(contains-morse? msg) (write-to-channel (convert-morse (parse-morse msg)))]
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (write-to-channel title) (log nick msg)))]
       [else (log nick msg)])))
