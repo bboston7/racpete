@@ -79,10 +79,7 @@ Handles incomming user irc commands
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
       [(contains-morse? msg) (begin
-                               (let ([translation (convert-morse (parse-morse msg))])
-                                 (when (not (equal? translation ""))
-                                   (write-to-channel
-                                     (string-append "translation: " translation))))
+                               (write-to-channel (convert-morse (parse-morse msg)))
                                (log nick msg))]
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (write-to-channel title) (log nick msg)))]
