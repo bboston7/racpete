@@ -62,7 +62,7 @@ Get longest matching morse string from a line.
     [else (assocdr v (cdr lst))]))
 
 ; Regex to match a line if line contains morse code.
-(define contains-morse-pattern #px"[-. ]{5}")
+(define contains-morse-pattern #px"[-. ]{6}")
 
 ; Regex to parse out the morse code from a line.
 (define get-morse-pattern #px"[-. ]+")
