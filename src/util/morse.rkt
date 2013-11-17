@@ -14,7 +14,13 @@ letter-by-letter, where letters are separated by a single space, and words are
 separated by two spaces.
 |#
 
-(define (parse-morse line) (car (regexp-match get-morse-pattern line)))
+#|
+Get longest matching morse string from a line.
+|#
+(define (parse-morse line)
+  (foldl (lambda (x y) (if (> (string-length x) (string-length y)) x y))
+         ""
+         (regexp-match* get-morse-pattern line)))
 
 (define (contains-morse? line) (regexp-match contains-morse-pattern line))
 
