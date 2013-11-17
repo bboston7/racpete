@@ -6,7 +6,9 @@
   "config.rkt"
   "util/connection.rkt"
   "util/string-utils.rkt"
-  "util/urltilities.rkt")
+  "util/urltilities.rkt"
+  "util/morse.rkt"
+)
 
 (define UPDATE-EXIT-CODE 2)
 
@@ -76,6 +78,7 @@ Handles incomming user irc commands
       [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
+      [(contains-morse? msg) (write-to-channel (convert-morse (parse-morse msg)))]
       [urlres (let ([title (get-website-title (car urlres))])
                 (begin (write-to-channel title) (log nick msg)))]
       [(equal? ".update" msg) (update nick)]
