@@ -61,7 +61,7 @@ Takes an english string and converts it to a morse string.
   (let
     ([strchar->morsechar
        (lambda (c) (let ([lookup (assoc c morse-map)])
-                     (if (lookup)
+                     (if lookup
                        (cond
                          [(equal? (cdr lookup) " ") "  "]
                          [else (string-append " " (cdr lookup))])
