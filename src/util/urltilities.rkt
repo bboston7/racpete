@@ -40,6 +40,7 @@ Parameters
                            (let*
                              ([symbol->str (lambda (c)
                                              (cond [(equal? c 'nbsp) "  "]
+                                                   [(equal? c 'raquo) ">>"]
                                                    [else " "]))]
                               [webdata->string
                                 (lambda (x)
