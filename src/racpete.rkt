@@ -22,28 +22,26 @@ is urls from the current channel log
              (if (file-exists? file-name)
                (open-input-file file-name #:mode 'text)
                #f)]
-         ; Tail recursive because log files get large!
-         ; Unfortunately, that means the list is backwards, this doesn't matter
-         ; now, and since we don't store date information in our logs, maybe it
-         ; never will
-         [tail-fn
-           (lambda (quotes-acc url-acc)
-             (let ([line (read-line log-file)])
-               (if (eof-object? line)
-                 (cons quotes-acc url-acc)
-                 (let ([url-match (regexp-match urlregex line)])
-                   (if url-match
-                     (tail-fn (cons line quotes-acc) (cons (car url-match) url-acc))
-                     (tail-fn (cons line quotes-acc) url-acc))))))])
+           ; Tail recursive because log files get large!
+           ; Unfortunately, that means the list is backwards, this doesn't
+           ; matter now, and since we don't store date information in our logs,
+           ; maybe it never will
+           [tail-fn
+             (lambda (quotes-acc url-acc)
+               (let ([line (read-line log-file)])
+                 (if (eof-object? line)
+                   (values quotes-acc url-acc)
+                   (let ([url-match (regexp-match urlregex line)])
+                     (if url-match
+                       (tail-fn (cons line quotes-acc) (cons (car url-match) url-acc))
+                       (tail-fn (cons line quotes-acc) url-acc))))))])
     (if log-file
       (begin0
         (tail-fn null null)
         (close-input-port log-file))
-      (cons null null))))
+      (values null null))))
 
-(define quotes-and-urls (build-quotes-and-urls))
-(define quotes (car quotes-and-urls))
-(define links (cdr quotes-and-urls))
+(define-values (quotes links) (build-quotes-and-urls))
 
 #|
 Log a line from the chat
