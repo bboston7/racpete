@@ -89,7 +89,9 @@ Handles incomming user irc commands
       [(string-starts-with? msg ".w") (let ([res (query-wikipedia (substring
                                                                     msg 3))])
                                         (if res
-                                          (write-to-channel res)
+                                          (begin
+                                            (write-to-channel (car res))
+                                            (write-to-channel (cdr res)))
                                           (write-to-channel "No match")))]
       [else (log nick msg)])))
 
