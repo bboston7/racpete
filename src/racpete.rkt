@@ -3,6 +3,7 @@
 
 (require
   "commands/ycombinator.rkt"
+  "commands/web-queries.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/string-utils.rkt"
@@ -85,6 +86,11 @@ Handles incomming user irc commands
                 (begin (write-to-channel title) (log nick msg)))]
       [(equal? ".update" msg) (update nick)]
       [(equal? ".test" msg) (write-to-channel "caught .test")]
+      [(string-starts-with? msg ".w") (let ([res (query-wikipedia (substring
+                                                                    msg 3))])
+                                        (if res
+                                          (write-to-channel res)
+                                          (write-to-channel "No match")))]
       [else (log nick msg)])))
 
 #|

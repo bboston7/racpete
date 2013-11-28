@@ -1,8 +1,15 @@
 #lang racket
 
 (provide (contract-out
+           [strip-tags (-> string? string?)]
            [string-contains? (-> string? string? boolean?)]
            [string-starts-with? (-> string? string? boolean?)]))
+
+#|
+Strips tags and the string "\n" out of str
+|#
+(define (strip-tags str)
+  (regexp-replace* #rx"<.*?>|\\\n" str ""))
 
 #|
 Returns a true value if token is in str
