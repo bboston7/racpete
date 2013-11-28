@@ -1,6 +1,7 @@
 #lang racket
 
-(require net/url
+(require net/uri-codec
+         net/url
          xml
          xml/path
          "../util/string-utils.rkt")
@@ -15,10 +16,15 @@
 (define (query-wikipedia query)
   (if (equal? query "")
     #f
-    (let ([res (query-service (string-append wikipedia-api-base query))])
-      (if (equal? (cadr (assoc 'totalhits (cadr (se-path* '(query) res)))) "0")
+    (let ([res (query-service (string-append wikipedia-api-base (uri-encode
+                                                                  query)))])
+      (if (or (eq? (caaddr res) 'error)
+              (equal? (cadr (assoc 'totalhits (cadr (se-path* '(query) res)))) 
+                      "0"))
         #f
-        (strip-tags (cadr (caddar (cdaddr (cadddr (cadddr res)))))))))) ; What have I done
+        (string-normalize-spaces
+          (strip-tags (cadr (caddar (cdaddr (cadddr (cadddr res))))))))))) ; What have I done
 
 (define (query-service url)
-  (xml->xexpr (document-element (read-xml (get-pure-port (string->url url))))))
+  (xml->xexpr (document-element (read-xml (get-pure-port
+                                            (string->url url))))))
