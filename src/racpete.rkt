@@ -64,11 +64,11 @@ Handles incomming user irc commands
   (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(equal? ".q" msg) (write-to-channel (get-random-line quotes))]
-      [(equal? "(y)" msg) (write-to-channel (string-append "I hate you Lopez"))]
-      [(equal? "mux" msg) (write-to-channel (string-append "juhn"))]
-      [(equal? "derp" msg) (write-to-channel (string-append "meep"))]
-      [(equal? "has anyone done the ruzzler" msg) (write-to-channel (string-append "probably not"))]
-      [(equal? ".boom" msg) (write-to-channel (string-append "BOOM GOES THE DYNAMITE!"))]
+      [(equal? "(y)" msg) (write-to-channel "I hate you Lopez")]
+      [(equal? "mux" msg) (write-to-channel "juhn")]
+      [(equal? "derp" msg) (write-to-channel "meep")]
+      [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
+      [(equal? ".boom" msg) (write-to-channel "BOOM GOES THE DYNAMITE!")]
       [(equal? ".link me" msg) (let* ([url (get-random-line links)]
                                      [title (get-website-title url)])
                                  (begin
