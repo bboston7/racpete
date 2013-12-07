@@ -98,6 +98,7 @@ Handles incomming user irc commands
                                             (write-to-channel (car res))
                                             (write-to-channel (cdr res)))
                                           (write-to-channel "No match")))]
+      [(equal? ".btc" msg) (write-to-channel (btc->usd-string))]
       [else (log nick msg)])))
 
 #|

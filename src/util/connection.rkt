@@ -63,7 +63,7 @@ Parameters:
     thing - Channel or a nick
 |#
 (define (write-to-thing msg thing)
-  (when (not (equal? msg ""))
+  (and msg (not (equal? msg ""))
     (send-string (string-append "PRIVMSG " thing " :" msg))))
 
 #|
