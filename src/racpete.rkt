@@ -91,13 +91,8 @@ Handles incomming user irc commands
                 (begin (write-to-channel title) (log nick msg)))]
       [(equal? ".update" msg) (update nick)]
       [(equal? ".test" msg) (write-to-channel "caught .test")]
-      [(string-starts-with? msg ".w") (let ([res (query-wikipedia (substring
-                                                                    msg 3))])
-                                        (if res
-                                          (begin
-                                            (write-to-channel (car res))
-                                            (write-to-channel (cdr res)))
-                                          (write-to-channel "No match")))]
+      [(string-starts-with? msg ".w") (query-wikipedia-async (substring msg 3)
+                                                             write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
       [else (log nick msg)])))
 

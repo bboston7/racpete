@@ -11,7 +11,8 @@
            [btc->usd-string (-> (or/c boolean? usd-string?))]
            [btc->usd-string-async (-> (-> (or/c boolean? string?) any)
                                       thread?)]
-           [query-wikipedia (-> string? (or/c boolean? pair?))]))
+           [query-wikipedia (-> string? (or/c boolean? pair?))]
+           [query-wikipedia-async (-> string? (-> string? any) thread?)]))
 
 (permissive-xexprs #t)
 
@@ -62,6 +63,18 @@ On error, returns #f
               (strip-tags (cadr (assoc 'snippet data))))
             (string-append wikipedia-page-base
                            (uri-encode (cadr (assoc 'title data))))))))))
+
+#|
+Calls query-wikipedia in a new thread with query, then passes the result to fn
+
+Returns immediately
+|#
+(define (query-wikipedia-async query fn)
+  (thread (lambda ()
+            (let ([res (query-wikipedia query)])
+              (if res
+                (begin (fn (car res)) (fn (cdr res)))
+                (fn "No match"))))))
 
 (define (query-xml-service url)
   (xml->xexpr (document-element (read-xml (get-pure-port
