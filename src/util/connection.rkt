@@ -5,7 +5,7 @@
 
 (provide
   (contract-out
-    [write-to-channel (-> (or/c boolean? string?) void?)])
+    [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))])
   clean-up-and-quit
   quit
   start-pete)
