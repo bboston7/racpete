@@ -4,10 +4,11 @@
 (require "../config.rkt")
 
 (provide
+  (contract-out
+    [write-to-channel (-> (or/c boolean? string?) void?)])
   clean-up-and-quit
   quit
-  start-pete
-  write-to-channel)
+  start-pete)
 
 #|
 Sets input to the input stream from the server and output to the output stream

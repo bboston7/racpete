@@ -9,6 +9,8 @@
 
 (provide (contract-out
            [btc->usd-string (-> (or/c boolean? usd-string?))]
+           [btc->usd-string-async (-> (-> (or/c boolean? string?) any)
+                                      thread?)]
            [query-wikipedia (-> string? (or/c boolean? pair?))]))
 
 (permissive-xexprs #t)
@@ -30,7 +32,13 @@ the value as a usd-string? or #f if the API call fails.
       (hash-ref (hash-ref (hash-ref res 'data) 'last) 'display)
       #f)))
 
+#|
+Calls btc->usd-string in a new thread, then passes the result to fn
 
+Returns immediately
+|#
+(define (btc->usd-string-async fn)
+  (thread (lambda () (fn (btc->usd-string)))))
 
 #|
 Given a query string, returns a cons cell with a snippet description and link
