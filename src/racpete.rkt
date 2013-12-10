@@ -76,7 +76,7 @@ Handles incomming user irc commands
                                  (begin
                                    (write-to-channel url)
                                    (write-to-channel title)))]
-      [(string-starts-with? msg "tell me about ") (learn-about msg)]
+      [(string-starts-with? "tell me about " msg) (learn-about msg)]
       [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
