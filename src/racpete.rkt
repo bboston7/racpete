@@ -91,6 +91,7 @@ Handles incomming user irc commands
       [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
+      [(string-starts-with? msg ".yt ") (handle-youtube-search msg)]
       [else (log nick msg)])))
 
 #|
@@ -99,6 +100,12 @@ Handles a url match in a chat line
 (define (handle-url-match urlres nick msg)
   (get-website-title-async (car urlres)
                            (lambda (x) (write-to-channel x) (log nick msg))))
+
+#|
+Handles searching youtube
+|#
+(define (handle-youtube-search msg)
+  (thread (lambda () (query-youtube (substring msg 4) write-to-channel))))
 
 #|
 Returns the message portion of an irc log line
