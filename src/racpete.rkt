@@ -76,13 +76,11 @@ Handles incomming user irc commands
                                  (begin
                                    (write-to-channel url)
                                    (write-to-channel title)))]
-      [(string-starts-with? msg "tell me about")
-       (let ([out (learn-about msg)])
-         (and out (write-to-channel out)))]
+      [(string-starts-with? msg "tell me about ") (learn-about msg)]
       [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
-      [(string-starts-with? msg ".morse") (write-to-channel
+      [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
       [(contains-morse? msg) (begin
                                (write-to-channel (convert-morse (parse-morse msg)))
@@ -91,7 +89,7 @@ Handles incomming user irc commands
                 (begin (write-to-channel title) (log nick msg)))]
       [(equal? ".update" msg) (update nick)]
       [(equal? ".test" msg) (write-to-channel "caught .test")]
-      [(string-starts-with? msg ".w") (query-wikipedia-async (substring msg 3)
+      [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
       [else (log nick msg)])))
