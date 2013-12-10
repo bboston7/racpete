@@ -9,3 +9,5 @@
 (define REALNAME "racpete")
 (define CHAN "")
 (define OPS null) ; This is a terrible way of doing authentication
+
+(define GOOGLE_API_KEY "")
