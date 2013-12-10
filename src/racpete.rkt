@@ -85,14 +85,20 @@ Handles incomming user irc commands
       [(contains-morse? msg) (begin
                                (write-to-channel (convert-morse (parse-morse msg)))
                                (log nick msg))]
-      [urlres (let ([title (get-website-title (car urlres))])
-                (begin (write-to-channel title) (log nick msg)))]
+      [urlres (handle-url-match urlres nick msg)]
       [(equal? ".update" msg) (update nick)]
       [(equal? ".test" msg) (write-to-channel "caught .test")]
       [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
       [else (log nick msg)])))
+
+#|
+Handles a url match in a chat line
+|#
+(define (handle-url-match urlres nick msg)
+  (get-website-title-async (car urlres)
+                           (lambda (x) (write-to-channel x) (log nick msg))))
 
 #|
 Returns the message portion of an irc log line

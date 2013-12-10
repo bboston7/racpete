@@ -7,7 +7,8 @@
 
 (provide
   urlregex
-  get-website-title)
+  get-website-title
+  get-website-title-async)
 
 #|
 This module provides utilities for use in processing urls
@@ -69,3 +70,8 @@ Parameters
       ""
       (string-trim (get-title-tag-text (list (read-html retrieved-html)))))))
 
+#|
+Asynchronously gets the title for url-string and calls fn on the result
+|#
+(define (get-website-title-async url-string fn)
+  (thread (lambda () (fn (get-website-title url-string)))))
