@@ -5,6 +5,7 @@
 
 (provide
   (contract-out
+    [act-to-channel (-> (or/c boolean? string?) any)]
     [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))])
   clean-up-and-quit
   quit
@@ -83,7 +84,7 @@ Parameters:
     thing - Channel or a nick
 |#
 (define (act-to-thing action thing)
-  (and action (not (equal? msg ""))
+  (and action (not (equal? action ""))
     (send-string (string-append "PRIVMSG " thing " :ACTION " action))))
 
 #|

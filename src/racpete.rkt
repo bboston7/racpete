@@ -92,7 +92,9 @@ Handles incomming user irc commands
                                                              write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
       [(string-starts-with? msg ".yt ") (handle-youtube-search msg)]
-      [(string-starts-with? msg ".kick ") (act-to-channel (string-append "kicks " (substring msg 6))]
+      [(string-starts-with? msg ".kick ") (act-to-channel
+                                            (string-append "kicks "
+                                                           (substring msg 6)))]
       [else (log nick msg)])))
 
 #|
