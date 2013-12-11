@@ -68,6 +68,25 @@ Parameters:
     (send-string (string-append "PRIVMSG " thing " :" msg))))
 
 #|
+Sends action to the channel
+
+Parameters:
+    action - Action text to send to server
+|#
+(define (act-to-channel action) (act-to-thing action CHAN))
+
+#|
+Sends action to thing, which can be a user or the channel
+
+Parameters:
+    action - Action text to send to server
+    thing - Channel or a nick
+|#
+(define (act-to-thing action thing)
+  (and action (not (equal? msg ""))
+    (send-string (string-append "PRIVMSG " thing " :ACTION " action))))
+
+#|
 Reads in, and handles messages from the server
 
 Parameters
