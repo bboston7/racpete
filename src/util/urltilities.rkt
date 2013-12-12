@@ -15,6 +15,11 @@ This module provides utilities for use in processing urls
 |#
 
 #|
+Number of bytes to read of a page before giving up
+|#
+(define READ_BYTES (* 1024 100)) ; 100KB
+
+#|
 This is a regex that matches on urls
 |#
 (define urlregex #px"https?://([\\da-zA-Z.]+)\\.([a-zA-Z.]{2,6})[/\\w.a-zA-Z?=&-]*/?")
@@ -68,7 +73,10 @@ Parameters
                                            (car html-blobs)))))]))])
     (if (equal? retrieved-html "")
       ""
-      (string-trim (get-title-tag-text (list (read-html retrieved-html)))))))
+      (string-trim (get-title-tag-text (list (read-html (open-input-string
+                                                          (read-string
+                                                            READ_BYTES
+                                                            retrieved-html)))))))))
 
 #|
 Asynchronously gets the title for url-string and calls fn on the result
