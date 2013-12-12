@@ -6,10 +6,10 @@
 (provide
   (contract-out
     [act-to-channel (-> (or/c boolean? string?) any)]
-    [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))])
-  clean-up-and-quit
-  quit
-  start-pete)
+    [clean-up-and-quit (->* () (natural-number/c) any)]
+    [quit (-> string? any)]
+    [start-pete (-> (-> string? string? any) any)]
+    [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))]))
 
 #|
 Sets input to the input stream from the server and output to the output stream
@@ -21,27 +21,24 @@ from our computer
 Identifies with the IRC Server
 |#
 (define (identify)
-  (begin
-    (send-string (string-append "NICK " NICK))
-    (send-string (string-append "USER " IDENT " 0 * :" REALNAME))))
+  (send-string (string-append "NICK " NICK))
+  (send-string (string-append "USER " IDENT " 0 * :" REALNAME)))
 
 #|
 Joins the channel
 |#
 (define (join)
-  (begin
-    (sleep 5)
-    (send-string (string-append "JOIN " CHAN))))
+  (sleep 5)
+  (send-string (string-append "JOIN " CHAN)))
 
 #|
 Exits the program after cleaning up files/sockets
 |#
 (define (clean-up-and-quit [code 0])
-  (begin
-    (display "Cleaning up and quitting....")
-    (close-output-port output)
-    (close-input-port input)
-    (exit code)))
+  (display "Cleaning up and quitting....")
+  (close-output-port output)
+  (close-input-port input)
+  (exit code))
 
 #|
 Quits with the message msg
@@ -95,14 +92,13 @@ Parameters
 |#
 (define (read-in privmsg-func)
   (define line (read-line input))
-  (begin
-    (cond
-      [(eof-object? line) (clean-up-and-quit)]
-      [(regexp-match #rx"^PING" line) (ping-respond line)]
-      [(regexp-match (string-append "^.* PRIVMSG " CHAN) line)
-       (handle-privmsg privmsg-func (string-trim line))])
-    (display (string-append line "\n"))
-    (read-in privmsg-func)))
+  (cond
+    [(eof-object? line) (clean-up-and-quit)]
+    [(regexp-match #rx"^PING" line) (ping-respond line)]
+    [(regexp-match (string-append "^.* PRIVMSG " CHAN) line)
+     (handle-privmsg privmsg-func (string-trim line))])
+  (display (string-append line "\n"))
+  (read-in privmsg-func))
 
 #|
 Breaks apart and handles a privmsg
@@ -113,15 +109,13 @@ fn - Function to pass nick and message to
   (define tokens (string-split line ":"))
   (define nick (car (string-split (car tokens) "!")))
   (define msg (string-join (cdr tokens) ":"))
-  (begin
-    (fn nick msg)))
+  (fn nick msg))
 
 #|
 Responds to a PING with a proper PONG
 |#
 (define (ping-respond line)
-  (begin
-    (send-string (string-replace line "PING" "PONG"))))
+  (send-string (string-replace line "PING" "PONG")))
 
 #|
 Sends str to the channel
@@ -130,9 +124,8 @@ Parameters
     str - string? to send to the server
 |#
 (define (send-string str)
-  (begin
-    (write-string (string-append str "\r\n") output)
-    (flush-output output)))
+  (write-string (string-append str "\r\n") output)
+  (flush-output output))
 
 #|
 Starts the bot
@@ -141,7 +134,6 @@ Parameters
     callback - Function to call back to on PRIVMSG from server
 |#
 (define (start-pete callback)
-  (begin
-    (identify)
-    (join)
-    (read-in callback)))
+  (identify)
+  (join)
+  (read-in callback))
