@@ -31,9 +31,12 @@ Parameters
     url-string - string? representation of a url.
 |#
 (define (get-website-title url-string)
-  (letrec ([retrieved-html (with-handlers
-                             ([exn:fail? (lambda (e) "")])
-                             (get-pure-port (string->url url-string)))]
+  (letrec ([retrieved-html (open-input-string
+                             (read-string
+                             READ_BYTES
+                             (with-handlers
+                               ([exn:fail? (lambda (e) "")])
+                               (get-pure-port (string->url url-string)))))]
            [get-title-tag-text
              (lambda (html-blobs)
                (cond
@@ -73,10 +76,7 @@ Parameters
                                            (car html-blobs)))))]))])
     (if (equal? retrieved-html "")
       ""
-      (string-trim (get-title-tag-text (list (read-html (open-input-string
-                                                          (read-string
-                                                            READ_BYTES
-                                                            retrieved-html)))))))))
+      (string-trim (get-title-tag-text (list (read-html retrieved-html)))))))
 
 #|
 Asynchronously gets the title for url-string and calls fn on the result
