@@ -5,14 +5,13 @@
   "commands/ycombinator.rkt"
   "commands/web-queries.rkt"
   "commands/kwanzaa.rkt"
+  "commands/auth-commands.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/string-utils.rkt"
   "util/urltilities.rkt"
   "util/morse.rkt"
 )
-
-(define UPDATE-EXIT-CODE 2)
 
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr
@@ -59,7 +58,7 @@ Log a line from the chat
                        (string-append "logs/" CHAN ".log") #:exists 'append))))
 
 #|
-Handles incomming user irc commands
+Handles incoming user irc commands
 |#
 (define (command-handler nick msg)
   (let ([urlres (regexp-match urlregex msg)])
@@ -77,7 +76,6 @@ Handles incomming user irc commands
                                    (write-to-channel url)
                                    (write-to-channel title)))]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
-      [(equal? ".die" msg) (die nick)]
       [(equal? ".ycombinator" msg) (begin (write-to-channel yc1) (write-to-channel yc2)
                                           (write-to-channel yc3) (write-to-channel yc4))]
       [(string-starts-with? msg ".morse ") (write-to-channel
@@ -86,7 +84,6 @@ Handles incomming user irc commands
                                (write-to-channel (convert-morse (parse-morse msg)))
                                (log nick msg))]
       [urlres (handle-url-match urlres nick msg)]
-      [(equal? ".update" msg) (update nick)]
       [(equal? ".test" msg) (write-to-channel "caught .test")]
       [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]
@@ -96,6 +93,14 @@ Handles incomming user irc commands
                                             (string-append "kicks "
                                                            (substring msg 6)))]
       [else (log nick msg)])))
+
+#|
+Handles incoming user irc commands in private messages.
+|#
+(define (priv-command-handler nick msg)
+  (cond
+    [(string-starts-with? msg ".die ") (verify (substring msg 5) die)]
+    [(string-starts-with? msg ".update ") (verify (substring msg 8) update )]))
 
 #|
 Handles a url match in a chat line
@@ -135,22 +140,4 @@ Given a string, returns a quote containing that string
           (string-append "Cache miss!  Tell me about" token)
           (get-message (list-ref matches (random (length matches)))))))))
 
-#|
-Quits the server after checking permissions of the caller
-|#
-(define (die nick)
-  ; TODO: Factor this out into some sort of auth module.
-  (and (ormap (lambda (op) (equal? nick op)) OPS)
-       (quit "told to die")
-       (clean-up-and-quit)))
-
-#|
-Exits, updates from git, then rejoins
-|#
-(define (update nick)
-  ; TODO: Factor this out into some sort of auth module.
-  (and (ormap (lambda (op) (equal? nick op)) OPS)
-       (quit "I'M GITTIN' AN UPGRADE MA")
-       (clean-up-and-quit UPDATE-EXIT-CODE)))
-
-(start-pete command-handler)
+(start-pete command-handler priv-command-handler)

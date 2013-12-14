@@ -8,7 +8,7 @@
     [act-to-channel (-> (or/c boolean? string?) any)]
     [clean-up-and-quit (->* () (natural-number/c) any)]
     [quit (-> string? any)]
-    [start-pete (-> (-> string? string? any) any)]
+    [start-pete (-> (-> string? string? any) (-> string? string? any) any)]
     [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))]))
 
 #|
@@ -28,14 +28,14 @@ Identifies with the IRC Server
 Joins the channel
 |#
 (define (join)
-  (sleep 5)
+  (sleep 3)
   (send-string (string-append "JOIN " CHAN)))
 
 #|
 Exits the program after cleaning up files/sockets
 |#
 (define (clean-up-and-quit [code 0])
-  (display "Cleaning up and quitting....")
+  (displayln "Cleaning up and quitting....")
   (close-output-port output)
   (close-input-port input)
   (exit code))
@@ -88,17 +88,22 @@ Parameters:
 Reads in, and handles messages from the server
 
 Parameters
-    privmsg-func - Function to call on receiving a PRIVMSG command.
+    chanmsg-func - Function to call on receiving a PRIVMSG command at the
+    channel level.
+    privmsg-func - Function to call on receiving a PRIVMSG command for actual
+    private messages.
 |#
-(define (read-in privmsg-func)
+(define (read-in chanmsg-func privmsg-func)
   (define line (read-line input))
   (cond
     [(eof-object? line) (clean-up-and-quit)]
     [(regexp-match #rx"^PING" line) (ping-respond line)]
-    [(regexp-match (string-append "^.* PRIVMSG " CHAN) line)
+    [(regexp-match (string-append "^.* PRIVMSG " CHAN) line) ; for channel-level
+     (handle-privmsg chanmsg-func (string-trim line))]
+    [(regexp-match (string-append "^.* PRIVMSG " NICK) line) ; for pm-level
      (handle-privmsg privmsg-func (string-trim line))])
   (display (string-append line "\n"))
-  (read-in privmsg-func))
+  (read-in chanmsg-func privmsg-func))
 
 #|
 Breaks apart and handles a privmsg
@@ -133,7 +138,7 @@ Starts the bot
 Parameters
     callback - Function to call back to on PRIVMSG from server
 |#
-(define (start-pete callback)
+(define (start-pete chan-callback priv-callback)
   (identify)
   (join)
-  (read-in callback))
+  (read-in chan-callback priv-callback))
