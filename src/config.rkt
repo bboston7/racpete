@@ -2,12 +2,11 @@
 
 (provide (all-defined-out))
 
-(define HOST "")
+(define HOST "example.server.com")
 (define PORT 6667)
 (define NICK "racpete")
 (define IDENT "racpete")
 (define REALNAME "racpete")
-(define CHAN "")
-(define OPS null) ; This is a terrible way of doing authentication
+(define CHAN "#examplechannel")
 
 (define GOOGLE_API_KEY "")

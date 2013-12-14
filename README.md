@@ -1,40 +1,33 @@
 racpete
 =======
-racpete is (will be) a super cool irc bot written entirely in Racket!  Since
-development has just begun, there is much work todo.  Consider tackling
-something from the high priority list below and submitting a pull request when
-done.  Alternatively, if you want to work on something else, that's also cool.
+racpete is the raddest, baddest irc bot ever written entirely in Racket!
 
-What to do
-----------
-Look in the issues tab for specific ideas.  Alternatively, here's our higher
-level roadmap.
+How do I use racpete?
+-----------------------------------
+- racpete is primarily tested on Linux machines running racket v5.3.6 or higher,
+  so a good first step is to install the latest racket runtime.
+- Clone the repo onto the machine you want the bot to run on.
+- In ```/src``` edit ```config.rkt``` to contain appropriate values, like
+  channel name, and pete's nick.
+- Choose a password which you will use when performing restricted operations such
+  as the ```.die``` command that kills the bot.  To set this password, overwrite
+  the ```.racpete.pass``` file in ```/src``` with the password's SHA-512 hash.
+  An easy way to do this on Linux is to change into the ```/src``` directory and
+  issue the command ```echo -n "password" | sha512sum | awk '{ print $1 }' >
+  .racpete.pass``` where password is your password.
+- You're done!  To start pete, just execute ```./run.bash```.
 
-### High Priority ###
-- Basic irc networking support
-    - ~~CONNECT~~ (Done as of 10/11/13)
-    - JOIN
-    - PONG
-    - PART
-    - QUIT
-    - PRIVMSG (Terrible name, this is how you send a message to a CHANNEL as
-      well)
-- Logging / log parsing
+Want to contribute?
+-------------------
+Look at the [issue tracker](https://github.com/bboston7/racpete/issues) for
+specific ideas of features to implement or bugs to fix.
 
-### Medium Priority ###
-- Multichannel support
-- Classic IRC bot fuctions
-    - .q
-    - tell me about
-    - Get link title
-    - Anything else you think may be fun
-- Configuration file parsing
+If you are scared, confused or lonely, feel free to contact
+[bboston7](https://github.com/bboston7) or
+[johnislarry](https://github.com/johnislarry) for general purpose guidance or
+otherwise sage wisdom.
 
-### Low Priority ###
-- Multiserver support
-
-Potentially Helpful Resources
------------------------------
+### Potentially Helpful Resources ###
 - [Super basic python IRC bot](http://travismccrea.com/2010/02/write-a-basic-python-irc-bot/)
 - [IRC Spec](http://tools.ietf.org/html/rfc2812)
 - [Racket networking docs](http://docs.racket-lang.org/net/)
