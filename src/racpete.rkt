@@ -70,11 +70,7 @@ Handles incoming user irc commands
       [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
       [(equal? ".boom" msg) (write-to-channel "BOOM GOES THE DYNAMITE!")]
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
-      [(equal? ".link me" msg) (let* ([url (get-random-line links)]
-                                     [title (get-website-title-async url)])
-                                 (begin
-                                   (write-to-channel url)
-                                   (write-to-channel title)))]
+      [(equal? ".link me" msg) (handle-link-me)]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(string-starts-with? msg ".morse ") (write-to-channel
@@ -99,9 +95,17 @@ Handles incoming user irc commands in private messages.
 (define (priv-command-handler nick msg)
   (cond
     [(string-starts-with? msg ".die ") (verify (substring msg 5) die)]
-    [(string-starts-with? msg ".update ") (verify (substring msg 8) update )]
+    [(string-starts-with? msg ".update ") (verify (substring msg 8) update)]
     [(equal? ".test" msg) (write-to-user "caught .test" nick)]
     [(equal? ".ycombinator" msg) (ycombo write-to-user nick)]))
+
+#|
+Handles a link me request
+|#
+(define (handle-link-me)
+  (let ([url (get-random-line links)])
+    (write-to-channel url)
+    (get-website-title-async url write-to-channel)))
 
 #|
 Handles a url match in a chat line
