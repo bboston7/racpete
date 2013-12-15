@@ -9,7 +9,8 @@
     [clean-up-and-quit (->* () (natural-number/c) any)]
     [quit (-> string? any)]
     [start-pete (-> (-> string? string? any) (-> string? string? any) any)]
-    [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))]))
+    [write-to-channel (-> (or/c boolean? string?) (or/c boolean? void?))]
+    [write-to-user (-> (or/c boolean? string?) (or/c boolean? string?) (or/c boolean? void?))]))
 
 #|
 Sets input to the input stream from the server and output to the output stream
@@ -53,6 +54,15 @@ Parameters:
     msg - Message to send to server
 |#
 (define (write-to-channel msg) (write-to-thing msg CHAN))
+
+#|
+Sends msg to the specified nick
+
+Parameters:
+    user - Nick of user we want to pm
+    msg - Message to send to nick
+|#
+(define (write-to-user msg user) (write-to-thing msg user))
 
 #|
 Sends msg to thing, which can be a user or the channel
