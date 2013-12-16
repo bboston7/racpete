@@ -1,12 +1,12 @@
-#lang racket
+#lang typed/racket
 
 (provide (all-defined-out))
 
-(define HOST "example.server.com")
-(define PORT 6667)
-(define NICK "racpete")
-(define IDENT "racpete")
-(define REALNAME "racpete")
-(define CHAN "#examplechannel")
+(define: HOST : String "example.server.com")
+(define: PORT : Positive-Integer 6667)
+(define: NICK : String "racpete")
+(define: IDENT : String "racpete")
+(define: REALNAME : String "racpete")
+(define: CHAN : String "#examplechannel")
 
-(define GOOGLE_API_KEY "")
+(define: GOOGLE_API_KEY : String "")
