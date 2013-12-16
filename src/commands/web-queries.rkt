@@ -1,6 +1,7 @@
 #lang racket
 
-(require json
+(require html
+         json
          net/uri-codec
          net/url
          xml
@@ -14,10 +15,13 @@
                                       thread?)]
            [query-wikipedia (-> string? (or/c boolean? pair?))]
            [query-wikipedia-async (-> string? (-> string? any) thread?)]
-           [query-youtube (-> string? (-> (or/c boolean? string?) any) any)]))
+           [query-youtube (-> string? (-> (or/c boolean? string?) any) any)]
+           [rand-bash (-> (-> string? any) thread?)]))
 
 (permissive-xexprs #t)
 
+(define BASH_BASE "http://bash.org/?")
+(define BASH_RAND "http://bash.org/?random")
 (define YOUTUBE_SEARCH_BASE
   (if GOOGLE_API_KEY
     (string-append
@@ -31,6 +35,24 @@
 
 (define (usd-string? str)
   (regexp-match? #px"^\\$[0-9]+\\.[0-9]{2}$" str))
+
+#|
+Asynchronously grabs a random link from bash.org and calls out with it
+|#
+(define (rand-bash out)
+  (define (fn top)
+    (cond
+      [(b? top) (substring (pcdata-string (car (html-full-content top))) 1)]
+      [(pcdata? top) #f]
+      [(head? top) #f]
+      [(form? top) #f]
+      [(html-full? top) (fn (html-full-content top))]
+      [(list? top) (ormap fn top)]
+      [(pair? top) (or (fn (car top)) (fn (cdr top)))]
+      [else #f]))
+  (thread (lambda ()
+            (out (string-append BASH_BASE (fn (scrape-html BASH_RAND)))))))
+
 
 #|
 Finds the current cost of a bitcoin according to the MtGox ticker and returns
@@ -121,3 +143,6 @@ Get a jsexpr? from querying a json API
                    acc
                    (fn (cdr keys) (hash-ref acc (car keys)))))])
   (fn keys hash)))
+
+(define (scrape-html url)
+  (read-html (get-pure-port (string->url url))))

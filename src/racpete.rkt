@@ -87,6 +87,7 @@ Handles incoming user irc commands
       [(string-starts-with? msg ".kick ") (act-to-channel
                                             (string-append "kicks "
                                                            (substring msg 6)))]
+      [(equal? ".bash" msg) (rand-bash write-to-channel)]
       [else (log nick msg)])))
 
 #|
