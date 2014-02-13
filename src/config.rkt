@@ -8,5 +8,6 @@
 (define: IDENT : String "racpete")
 (define: REALNAME : String "racpete")
 (define: CHAN : String "#examplechannel")
+(define RECONNECT_TIMER 30)
 
 (define: GOOGLE_API_KEY : String "")

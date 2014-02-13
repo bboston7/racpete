@@ -161,6 +161,20 @@ Parameters
   (flush-output output))
 
 #|
+Reconnect to the server
+|#
+(: reconnect (-> Any))
+(define (reconnect)
+  (close-input-port input)
+  (close-output-port output)
+  (printf "disconnected, reconnecting in ~a seconds\n" RECONNECT_TIMER)
+  (sleep RECONNECT_TIMER)
+  (displayln "reconnecting...")
+  (set!-values (input output) (tcp-connect HOST PORT))
+  (identify)
+  (join))
+
+#|
 Starts the bot
 
 Parameters
