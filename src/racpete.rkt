@@ -6,6 +6,7 @@
   "commands/web-queries.rkt"
   "commands/kwanzaa.rkt"
   "commands/auth-commands.rkt"
+  "commands/yesno.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/string-utils.rkt"
@@ -72,7 +73,7 @@ Handles incoming user irc commands
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
-      [(regexp-match-exact? #px"^PeteBot\\b.*\\?$" msg) (write-to-channel "yes")]
+      [(regexp-match-exact? (pregexp (string-append NICK "\\b.*\\?")) msg) (write-to-channel (yesno))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
