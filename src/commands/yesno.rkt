@@ -29,9 +29,7 @@ This module provides the functions for the random fortune teller command.
   ))
 
 (define (pick-response)
-  (begin
-    (sleep (+ (* (random) 0.75) 0.25))
-    (list-ref responses (random (length responses)))))
+  (list-ref responses (random (length responses))))
 
 (define yesno pick-response)
 
