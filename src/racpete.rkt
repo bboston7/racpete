@@ -72,6 +72,7 @@ Handles incoming user irc commands
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
+      [(regexp-match-exact? #px"^PeteBot\\b.*\\?$" msg) (write-to-channel "yes")]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
