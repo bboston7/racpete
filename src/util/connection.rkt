@@ -121,7 +121,7 @@ Parameters
 (define (read-in chanmsg-func privmsg-func)
   (define line (read-line input))
   (cond
-    [(eof-object? line) (clean-up-and-quit)]
+    [(eof-object? line) (reconnect)]
     [(regexp-match #rx"^PING" line) (ping-respond line)]
     [(regexp-match (string-append "^.* PRIVMSG " CHAN) line) ; for channel-level
      (handle-privmsg chanmsg-func (string-trim line))]
