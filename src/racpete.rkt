@@ -65,7 +65,7 @@ Handles incoming user irc commands
   (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(equal? ".q" msg) (write-to-channel (get-random-line quotes))]
-      [(equal? "(y)" msg) (write-to-channel "I hate you Lopez")]
+      [(equal? "(y)" msg) (write-to-channel (string-append "I hate you " nick))]
       [(equal? "mux" msg) (write-to-channel "juhn")]
       [(equal? "derp" msg) (write-to-channel "meep")]
       [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
