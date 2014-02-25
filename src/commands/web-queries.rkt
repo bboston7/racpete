@@ -10,7 +10,7 @@
          "../util/string-utils.rkt")
 
 (provide (contract-out
-           [btc->usd-string (-> (or/c boolean? usd-string?))]
+           [btc->usd-string (-> exchange? (or/c boolean? usd-string?))]
            [btc->usd-string-async (-> (-> (or/c boolean? string?) any)
                                       thread?)]
            [query-wikipedia (-> string? (or/c boolean? pair?))]
@@ -22,6 +22,7 @@
 
 (define BASH_BASE "http://bash.org/?")
 (define BASH_RAND "http://bash.org/?random")
+(define BITSTAMP_TICKER "https://www.bitstamp.net/api/ticker/")
 (define YOUTUBE_SEARCH_BASE
   (if GOOGLE_API_KEY
     (string-append
@@ -32,6 +33,9 @@
 (define MT_GOX_TICKER "http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast")
 (define wikipedia-api-base "http://en.wikipedia.org/w/api.php?action=query&list=search&format=xml&srlimit=1&srsearch=")
 (define wikipedia-page-base "http://en.wikipedia.org/wiki/")
+
+(define (exchange? exchange)
+  (memq exchange '('bitstamp 'gox)))
 
 (define (usd-string? str)
   (regexp-match? #px"^\\$[0-9]+\\.[0-9]{2}$" str))
@@ -58,11 +62,14 @@ Asynchronously grabs a random link from bash.org and calls out with it
 Finds the current cost of a bitcoin according to the MtGox ticker and returns
 the value as a usd-string? or #f if the API call fails.
 |#
-(define (btc->usd-string)
-  (let ([res (query-json-service MT_GOX_TICKER)])
-    (if (equal? (hash-ref res 'result) "success")
-      (from-nested-hash res (list 'data 'last 'display))
-      #f)))
+(define (btc->usd-string exchange)
+  (match exchange
+    ['bitstamp (let ([res (query-json-service BITSTAMP_TICKER)])
+                 (string-append "$" (hash-ref res 'last)))]
+    ['gox (let ([res (query-json-service MT_GOX_TICKER)])
+            (if (equal? (hash-ref res 'result) "success")
+              (from-nested-hash res (list 'data 'last 'display))
+              #f))]))
 
 #|
 Calls btc->usd-string in a new thread, then passes the result to fn
@@ -70,7 +77,9 @@ Calls btc->usd-string in a new thread, then passes the result to fn
 Returns immediately
 |#
 (define (btc->usd-string-async fn)
-  (thread (lambda () (fn (btc->usd-string)))))
+  (thread
+    (lambda () (fn (string-append "bitstamp: " (btc->usd-string 'bitstamp)))))
+  (thread (lambda () (fn (string-append "gox: " (btc->usd-string 'gox))))))
 
 #|
 Given a query string, returns a cons cell with a snippet description and link
