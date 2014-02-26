@@ -74,6 +74,7 @@ Handles incoming user irc commands
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
       [(regexp-match-exact? (pregexp (string-append NICK "\\b.*\\?")) msg) (write-to-channel (yesno))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
+      [(equal? ".plug" msg) (write-to-channel "help me out: http://www.github.com/bboston7/racpete")]
       [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
       [(contains-morse? msg) (begin
