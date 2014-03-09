@@ -1,5 +1,10 @@
 #lang racket
 
+(require
+  "../util/names-manager.rkt"
+  "../util/list-utils.rkt"
+)
+
 (provide
   yesno
 )
@@ -14,22 +19,21 @@ This module provides the functions for the random fortune teller command.
     "no"
     "maybe"
     "how should I know?"
-    "bboston7: ^"
-    "john: ^"
-    "japacible: ^"
-    "sunjayc: ^"
+    (lambda ()
+      (string-append (pick-random (current-nicks)) ": ^"))
     "ask the danimal"
     "probably"
     "signs point to yes"
     "signs point to no"
-    "what did jenpa have to say about it?"
-    "yes, but only if cosimo stops quitting all the time"
+    (lambda ()
+      (string-append "what did " (pick-random (current-nicks)) " have to say about it?"))
     "VERY YES"
     "unfortunately."
   ))
 
-(define (pick-response)
-  (list-ref responses (random (length responses))))
-
-(define yesno pick-response)
+(define (yesno)
+  (let ([response (pick-random responses)])
+    (if (procedure? response)
+      (response)
+      response)))
 
