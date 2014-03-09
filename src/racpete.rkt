@@ -7,6 +7,7 @@
   "commands/kwanzaa.rkt"
   "commands/auth-commands.rkt"
   "commands/yesno.rkt"
+  "commands/ballsohard.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/names-manager.rkt"
@@ -96,6 +97,7 @@ Handles incoming user irc commands
                                        (string-append
                                          "kicks "
                                          (list-ref nicks (random (length nicks))))))]
+      [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
       [else (log nick msg)])))
 
 #|
