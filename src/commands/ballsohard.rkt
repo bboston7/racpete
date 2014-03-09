@@ -1,7 +1,7 @@
 #lang racket
 
 (require
-  "util/names-manager.rkt"
+  "../util/names-manager.rkt"
 )
 
 (provide
@@ -20,5 +20,5 @@ got
          (n1 (list-ref nicks index))
          (n2 (list-ref nicks (modulo (add1 index) len)))]
     (if (zero? (random 2))
-      (string-append "according to " n1 ", " n2 " can ball SO HARD")
-      (string-append "according to " n1 ", " n2 " has DAT LEAN"))))
+      (string-append "according to " n1 ", " n2 " can BALL SO HARD")
+      (string-append "according to " n1 ", " n2 " has got DAT LEAN"))))
