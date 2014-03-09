@@ -11,6 +11,7 @@
   "util/connection.rkt"
   "util/names-manager.rkt"
   "util/string-utils.rkt"
+  "util/list-utils.rkt"
   "util/urltilities.rkt"
   "util/morse.rkt"
 )
@@ -91,11 +92,8 @@ Handles incoming user irc commands
                                             (string-append "kicks "
                                                            (substring msg 6)))]
       [(equal? ".bash" msg) (rand-bash write-to-channel)]
-      [(equal? ".roulette" msg) (let ([nicks (current-nicks)])
-                                     (act-to-channel
-                                       (string-append
-                                         "kicks "
-                                         (list-ref nicks (random (length nicks))))))]
+      [(equal? ".roulette" msg) (act-to-channel
+                                  (string-append "kicks " (pick-random (current-nicks))))]
       [else (log nick msg)])))
 
 #|
