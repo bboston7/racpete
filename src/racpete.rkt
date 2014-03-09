@@ -7,6 +7,7 @@
   "commands/kwanzaa.rkt"
   "commands/auth-commands.rkt"
   "commands/yesno.rkt"
+  "commands/ballsohard.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/names-manager.rkt"
