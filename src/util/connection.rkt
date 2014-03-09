@@ -1,7 +1,9 @@
 #!/usr/bin/racket
 #lang typed/racket
 
-(require "../config.rkt")
+(require "../config.rkt"
+         "names-manager.rkt"
+)
 
 (require/typed racket
                [string-split (String String -> (Listof String))]
@@ -13,11 +15,8 @@
          clean-up-and-quit
          quit
          start-pete
-         current-nicks
          write-to-channel
          write-to-user)
-
-(define nicks '())
 
 #|
 Sets input to the input stream from the server and output to the output stream
@@ -161,66 +160,6 @@ Parameters
   (read-in chanmsg-func privmsg-func))
 
 (define: nick-prefixes : String "@%+")
-
-#|
-Retrieves list of user prefixes from server
-|#
-(: handle-statusmsg (String -> Any))
-(define (handle-statusmsg line)
-  (define regmatch (regexp-match #px" STATUSMSG=(\\S*) " line))
-  (if regmatch
-    (let ([match (cadr regmatch)])
-      (if match
-        (set! nick-prefixes match)
-        '()))
-    '()))
-
-#|
-Handle a name list response
-|#
-(: handle-names (String -> Any))
-(define (handle-names line)
-  (define tokens (string-split line ":"))
-  (define names (string-split (cadr tokens) " "))
-  (set! nicks
-    (map (lambda: ([name : String])
-           (regexp-replace (string-append "^[" nick-prefixes "]*")
-                           name
-                           ""))
-         names)))
-
-#|
-Handle a user JOIN message
-|#
-(: handle-join (String -> Any))
-(define (handle-join line)
-  (define tokens (string-split line ":"))
-  (define nick (car (string-split (car tokens) "!")))
-  (set! nicks (cons nick nicks)))
-
-#|
-Handle a user PART or QUIT message
-|#
-(: handle-part (String -> Any))
-(define (handle-part line)
-  (define tokens (string-split line ":"))
-  (define nick (car (string-split (car tokens) "!")))
-  (set! nicks (remove nick nicks)))
-
-#|
-Handle a user NICK message
-|#
-(: handle-nick (String -> Any))
-(define (handle-nick line)
-  (define tokens (string-split line ":"))
-  (define oldnick (car (string-split (car tokens) "!")))
-  (define newnick (third (string-split (car tokens) " ")))
-  (set! nicks (cons newnick (remove oldnick nicks))))
-
-#|
-Return nicks as a list
-|#
-(define (current-nicks) nicks)
 
 #|
 Breaks apart and handles a privmsg
