@@ -109,7 +109,7 @@ Parameters:
 (: act-to-thing (String String -> Any))
 (define (act-to-thing action thing)
   (and action (not (equal? action ""))
-    (send-string (string-append "PRIVMSG " thing " :ACTION " action))))
+    (send-string (string-append "PRIVMSG " thing " :\x01ACTION " action "\x01"))))
 
 #|
 Refresh names from channel
