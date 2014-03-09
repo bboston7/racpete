@@ -9,6 +9,7 @@
   "commands/yesno.rkt"
   "config.rkt"
   "util/connection.rkt"
+  "util/names-manager.rkt"
   "util/string-utils.rkt"
   "util/urltilities.rkt"
   "util/morse.rkt"
@@ -90,6 +91,11 @@ Handles incoming user irc commands
                                             (string-append "kicks "
                                                            (substring msg 6)))]
       [(equal? ".bash" msg) (rand-bash write-to-channel)]
+      [(equal? ".roulette" msg) (let ([nicks (current-nicks)])
+                                     (act-to-channel
+                                       (string-append
+                                         "kicks "
+                                         (list-ref nicks (random (length nicks))))))]
       [else (log nick msg)])))
 
 #|
@@ -100,6 +106,12 @@ Handles incoming user irc commands in private messages.
     [(string-starts-with? msg ".die ") (verify (substring msg 5) die)]
     [(string-starts-with? msg ".update ") (verify (substring msg 8) update)]
     [(equal? ".test" msg) (write-to-user "caught .test" nick)]
+    [(equal? ".names" msg) (begin (names-from-channel)
+                                  (write-to-user
+                                    (string-append
+                                      "requested names on "
+                                      CHAN)
+                                    nick))]
     [(equal? ".ycombinator" msg) (ycombo write-to-user nick)]))
 
 #|

@@ -1,7 +1,9 @@
 #!/usr/bin/racket
 #lang typed/racket
 
-(require "../config.rkt")
+(require "../config.rkt"
+         "names-manager.rkt"
+)
 
 (require/typed racket
                [string-split (String String -> (Listof String))]
@@ -9,6 +11,7 @@
                [string-trim (String -> String)])
 
 (provide act-to-channel
+         names-from-channel
          clean-up-and-quit
          quit
          start-pete
@@ -109,6 +112,22 @@ Parameters:
     (send-string (string-append "PRIVMSG " thing " :ACTION " action))))
 
 #|
+Refresh names from channel
+|#
+(: names-from-channel ( -> Any))
+(define (names-from-channel) (names-from-thing CHAN))
+
+#|
+Refresh names from thing, which can be a channel
+
+Parameters:
+    thing - Channel or a nick
+|#
+(: names-from-thing (String -> Any))
+(define (names-from-thing thing)
+    (send-string (string-append "NAMES " thing)))
+
+#|
 Reads in, and handles messages from the server
 
 Parameters
@@ -123,12 +142,24 @@ Parameters
   (cond
     [(eof-object? line) (reconnect)]
     [(regexp-match #rx"^PING" line) (ping-respond line)]
+    [(regexp-match (pregexp (string-append "^\\S* 005 " NICK ".* STATUSMSG=\\S* ")) line)
+     (handle-statusmsg (string-trim line))]
+    [(regexp-match (pregexp (string-append "^\\S* 353 " NICK)) line)
+     (handle-names (string-trim line))]
+    [(regexp-match (string-append "^.* JOIN :" CHAN) line)
+     (handle-join (string-trim line))]
+    [(regexp-match #px"^\\S* (PART|QUIT) " line)
+     (handle-part (string-trim line))]
+    [(regexp-match #px"^\\S* NICK " line)
+     (handle-nick (string-trim line))]
     [(regexp-match (string-append "^.* PRIVMSG " CHAN) line) ; for channel-level
      (handle-privmsg chanmsg-func (string-trim line))]
     [(regexp-match (string-append "^.* PRIVMSG " NICK) line) ; for pm-level
      (handle-privmsg privmsg-func (string-trim line))])
   (displayln line)
   (read-in chanmsg-func privmsg-func))
+
+(define: nick-prefixes : String "@%+")
 
 #|
 Breaks apart and handles a privmsg
