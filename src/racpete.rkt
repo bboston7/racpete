@@ -95,6 +95,7 @@ Handles incoming user irc commands
       [(equal? ".bash" msg) (rand-bash write-to-channel)]
       [(equal? ".roulette" msg) (act-to-channel
                                   (string-append "kicks " (pick-random (current-nicks))))]
+      [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
       [else (log nick msg)])))
 
 #|
