@@ -13,6 +13,7 @@
            [btc->usd-string (-> exchange? (or/c boolean? usd-string?))]
            [btc->usd-string-async (-> (-> (or/c boolean? string?) any)
                                       thread?)]
+           [query-google (-> string? (-> (or/c boolean? string?) any) any)]
            [query-wikipedia (-> string? (or/c boolean? pair?))]
            [query-wikipedia-async (-> string? (-> string? any) thread?)]
            [query-youtube (-> string? (-> (or/c boolean? string?) any) any)]
@@ -23,6 +24,15 @@
 (define BASH_BASE "http://bash.org/?")
 (define BASH_RAND "http://bash.org/?random")
 (define BITSTAMP_TICKER "https://www.bitstamp.net/api/ticker/")
+(define GOOGLE_SEARCH_BASE
+  (if (and GOOGLE_API_KEY GOOGLE_SEARCH_CX)
+    (string-append
+      "https://www.googleapis.com/customsearch/v1?num=1&safe=off&key="
+      GOOGLE_API_KEY
+      "&cx="
+      GOOGLE_SEARCH_CX
+      "&q=")
+    #f))
 (define YOUTUBE_SEARCH_BASE
   (if GOOGLE_API_KEY
     (string-append
@@ -119,6 +129,19 @@ Returns immediately
 (define (query-xml-service url)
   (xml->xexpr (document-element (read-xml (get-pure-port
                                             (string->url url))))))
+
+#|
+Searches google for query and calls fn on the result
+
+Requires that GOOGLE_API_KEY and GOOGLE_SEARCH_CX are valid
+|#
+(define (query-google query fn)
+  (let ([res (query-json-service (string-append GOOGLE_SEARCH_BASE query))])
+    (if (equal? "0" (from-nested-hash res (list 'searchInformation 'totalResults)))
+      (fn (string-append "no results for " query))
+      (let ([item (car (hash-ref res 'items))])
+        (fn (string-append (hash-ref item 'title) " - " (hash-ref item 'link)))
+        (fn (hash-ref item 'snippet))))))
 
 #|
 Searches youtube for query and calls fn on the result.

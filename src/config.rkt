@@ -11,3 +11,4 @@
 (define RECONNECT_TIMER 30)
 
 (define: GOOGLE_API_KEY : String "")
+(define GOOGLE_SEARCH_CX #f)

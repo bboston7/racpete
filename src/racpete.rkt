@@ -96,6 +96,7 @@ Handles incoming user irc commands
       [(equal? ".roulette" msg) (act-to-channel
                                   (string-append "kicks " (pick-random (current-nicks))))]
       [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
+      [(string-starts-with? msg ".g") (handle-google-search msg)]
       [else (log nick msg)])))
 
 #|
@@ -129,6 +130,12 @@ Handles a url match in a chat line
 (define (handle-url-match urlres nick msg)
   (get-website-title-async (car urlres)
                            (lambda (x) (write-to-channel x) (log nick msg))))
+
+#|
+Handles searching google
+|#
+(define (handle-google-search msg)
+  (thread (lambda () (query-google (substring msg 3) write-to-channel))))
 
 #|
 Handles searching youtube
