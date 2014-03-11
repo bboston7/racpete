@@ -123,8 +123,9 @@ Handles a link me request
 |#
 (define (handle-link-me)
   (let ([url (get-random-line links)])
-    (write-to-channel url)
-    (get-website-title-async url write-to-channel)))
+    (when url
+      (write-to-channel url)
+      (get-website-title-async url write-to-channel))))
 
 #|
 Handles a url match in a chat line
@@ -155,7 +156,10 @@ Returns the message portion of an irc log line
 Returns a random line from the passed list
 |#
 (define (get-random-line lst)
-  (list-ref lst (random (length lst))))
+  (let ([len (length lst)])
+    (if (zero? len)
+      #f
+      (list-ref lst (random (length lst))))))
 
 
 #|
