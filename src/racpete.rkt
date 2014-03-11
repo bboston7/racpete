@@ -8,6 +8,7 @@
   "commands/auth-commands.rkt"
   "commands/yesno.rkt"
   "commands/ballsohard.rkt"
+  "commands/games.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/names-manager.rkt"
@@ -67,6 +68,7 @@ Handles incoming user irc commands
 (define (command-handler nick msg)
   (let ([urlres (regexp-match urlregex msg)])
     (cond
+      [(string-starts-with? msg ".swagtag ") (write-to-channel (swag-tag nick (substring msg 9) (current-nicks) NICK))]
       [(equal? ".q" msg) (write-to-channel (get-random-line quotes))]
       [(equal? "mux" msg) (write-to-channel "juhn")]
       [(equal? "derp" msg) (write-to-channel "meep")]
@@ -104,6 +106,7 @@ Handles incoming user irc commands in private messages.
 |#
 (define (priv-command-handler nick msg)
   (cond
+    [(string-starts-with? msg ".swagtag reset ") (verify (substring msg 15) swag-reset)]
     [(string-starts-with? msg ".die ") (verify (substring msg 5) die)]
     [(string-starts-with? msg ".update ") (verify (substring msg 8) update)]
     [(equal? ".test" msg) (write-to-user "caught .test" nick)]
