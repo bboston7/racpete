@@ -21,7 +21,7 @@ Sets the swag holder to a random connected person.
 (define (swag-reset) (let ([nicks (current-nicks)])(begin
   (set! swag-holder (pick-random nicks));set to random
   (if (member swag-holder BOT_LIST)
-    (swag-reset nicks)
+    (swag-reset)
     (string-append "Swag has been entrusted to " swag-holder ".")
   )
 )))
