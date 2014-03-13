@@ -9,6 +9,7 @@
   "commands/yesno.rkt"
   "commands/ballsohard.rkt"
   "commands/games.rkt"
+  "commands/what-say.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/names-manager.rkt"
@@ -69,7 +70,7 @@ Handles incoming user irc commands
   (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(string-starts-with? msg ".swagtag ") (write-to-channel (swag-tag nick (substring msg 9) (current-nicks) NICK))]
-      [(equal? ".q" msg) (write-to-channel (get-random-line quotes))]
+      [(equal? ".q" msg) (write-to-channel (pick-random quotes))]
       [(equal? "mux" msg) (write-to-channel "juhn")]
       [(equal? "derp" msg) (write-to-channel "meep")]
       [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
@@ -77,6 +78,10 @@ Handles incoming user irc commands
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
+      [(regexp-match #rx"what has (.*) said\\?" msg)
+         => (lambda (x) (write-to-channel (has-said (cadr x) quotes)))]
+      [(regexp-match #rx"what would (.*) say\\?" msg)
+         => (lambda (x) (write-to-channel (what-would-say (cadr x) quotes)))]
       [(regexp-match-exact? (pregexp (string-append NICK "\\b.*\\?")) msg) (write-to-channel (yesno))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(equal? ".plug" msg) (write-to-channel "help me out: http://www.github.com/bboston7/racpete")]
@@ -122,7 +127,7 @@ Handles incoming user irc commands in private messages.
 Handles a link me request
 |#
 (define (handle-link-me)
-  (let ([url (get-random-line links)])
+  (let ([url (pick-random links)])
     (when url
       (write-to-channel url)
       (get-website-title-async url write-to-channel))))
@@ -147,22 +152,6 @@ Handles searching youtube
   (thread (lambda () (query-youtube (substring msg 4) write-to-channel))))
 
 #|
-Returns the message portion of an irc log line
-|#
-(define (get-message line)
-  (string-join (cdr (string-split line))))
-
-#|
-Returns a random line from the passed list
-|#
-(define (get-random-line lst)
-  (let ([len (length lst)])
-    (if (zero? len)
-      #f
-      (list-ref lst (random (length lst))))))
-
-
-#|
 Given a string, returns a quote containing that string
 |#
 (define (learn-about msg)
@@ -172,6 +161,6 @@ Given a string, returns a quote containing that string
       (let ([matches (filter (lambda (x) (string-contains? x token)) quotes)])
         (if (null? matches)
           (string-append "Cache miss!  Tell me about" token)
-          (get-message (list-ref matches (random (length matches)))))))))
+          (chop-token (list-ref matches (random (length matches)))))))))
 
 (start-pete command-handler priv-command-handler)
