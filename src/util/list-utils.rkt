@@ -6,6 +6,9 @@
 Picks a random element from the list
 |#
 (: pick-random ((Listof Any) -> Any))
-(define (pick-random ls)
-  (list-ref ls (random (length ls))))
+(define (pick-random lst)
+  (let ([len (length lst)])
+    (if (zero? len)
+      #f
+      (list-ref lst (random (length lst))))))
 

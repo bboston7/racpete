@@ -1,6 +1,10 @@
 #lang typed/racket
 
+(require/typed racket
+               [string-split (String -> (Listof String))])
+
 (provide strip-tags
+         chop-token
          string-contains?
          string-starts-with?)
 
@@ -10,6 +14,14 @@ Strips tags and the string "\n" out of str
 (: strip-tags (String -> String))
 (define (strip-tags str)
   (regexp-replace* #rx"<.*?>|\\\n" str ""))
+
+#|
+Chops out the first token of a string.
+Can be used to get the message portion of an irc log line.
+|#
+(: chop-token (String -> String))
+(define (chop-token line)
+  (string-join (cdr (string-split line))))
 
 #|
 Returns a true value if token is in str
