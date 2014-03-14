@@ -1,6 +1,7 @@
 #lang racket
 
 (require
+  "../config.rkt"
   "../util/list-utils.rkt"
   "../util/string-utils.rkt"
 )
