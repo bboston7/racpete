@@ -58,7 +58,7 @@ Generate a randomized list of tokens given a nexts dictionary and an ending toke
                   nexts))])
     (if third
       (let ([rev-acc (cons (cdr third) rev-acc)])
-        (if (and (member (cdr third) ends) (< (random 100) 25)) ; 25% chance of ending if end token
+        (if (and (member (cdr third) ends) (< (random 100) 2)) ; 2% chance of ending if end token
             rev-acc
             (build-msg nexts ends rev-acc)))
       rev-acc)))
@@ -75,24 +75,26 @@ Turn a (reversed) token list into a string
   (string-append "<" nick "> " msg))
 
 #|
-Given a nick and a quote list, forms a quote from that person
+Given a nick and a quote list, calls fn on a quote formed from that person
 |#
-(define (what-would-say nick quotes)
-  (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
-        [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
-    (say-quote nick (if (equal? nick NICK)
-                      (make-quote (map chop-token quotes))
-                      (if (null? matches)
-                        "derp derp derp derp"
-                        (make-quote (map chop-token matches)))))))
+(define (what-would-say nick quotes fn)
+  (thread (lambda ()
+    (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
+          [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
+      (fn (say-quote nick (if (equal? nick NICK)
+                        (make-quote (map chop-token quotes))
+                        (if (null? matches)
+                          "derp derp derp derp"
+                          (make-quote (map chop-token matches))))))))))
 
 #|
-Given a nick, returns a quote from that person
+Given a nick, calls fn on a quote from that person
 |#
-(define (has-said nick quotes)
-  (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
-        [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
-    (if (null? matches)
-      (string-append "Unfortunately, " nick " has never spoken.")
-      (pick-random matches))))
+(define (has-said nick quotes fn)
+  (thread (lambda ()
+    (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
+          [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
+      (fn (if (null? matches)
+        (string-append "Unfortunately, " nick " has never spoken.")
+        (pick-random matches)))))))
 

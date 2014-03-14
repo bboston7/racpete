@@ -79,9 +79,9 @@ Handles incoming user irc commands
       [(equal? ".link me" msg) (handle-link-me)]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
       [(regexp-match #rx"what has (.*) said\\?" msg)
-         => (lambda (x) (write-to-channel (has-said (cadr x) quotes)))]
+         => (lambda (x) (has-said (cadr x) quotes write-to-channel))]
       [(regexp-match #rx"what would (.*) say\\?" msg)
-         => (lambda (x) (write-to-channel (what-would-say (cadr x) quotes)))]
+         => (lambda (x) (what-would-say (cadr x) quotes write-to-channel))]
       [(regexp-match-exact? (pregexp (string-append NICK "\\b.*\\?")) msg) (write-to-channel (yesno))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(equal? ".plug" msg) (write-to-channel "help me out: http://www.github.com/bboston7/racpete")]
