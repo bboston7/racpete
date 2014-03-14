@@ -79,9 +79,11 @@ Given a nick and a quote list, forms a quote from that person
 (define (what-would-say nick quotes)
   (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
         [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
-    (say-quote nick (if (null? matches)
-                      "derp derp derp derp"
-                      (make-quote (map chop-token matches))))))
+    (say-quote nick (if (equal? nick NICK)
+                      (make-quote (map chop-token quotes))
+                      (if (null? matches)
+                        "derp derp derp derp"
+                        (make-quote (map chop-token matches)))))))
 
 #|
 Given a nick, returns a quote from that person
