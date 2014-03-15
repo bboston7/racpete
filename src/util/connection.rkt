@@ -11,11 +11,13 @@
                [string-trim (String -> String)])
 
 (provide act-to-channel
+         act-to-thing
          names-from-channel
          clean-up-and-quit
          quit
          start-pete
          write-to-channel
+         write-to-thing
          write-to-user)
 
 #|

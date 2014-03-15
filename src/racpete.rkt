@@ -110,10 +110,20 @@ Handles incoming user irc commands
 Handles incoming user irc commands in private messages.
 |#
 (define (priv-command-handler nick msg)
+  (define (channelize name)
+    (if (string-starts-with? name "#")
+      name
+      (string-append "#" name)))
   (cond
     [(string-starts-with? msg ".swagtag reset ") (verify (substring msg 15) swag-reset)]
     [(string-starts-with? msg ".die ") (verify (substring msg 5) die)]
     [(string-starts-with? msg ".update ") (verify (substring msg 8) update)]
+    [(string-starts-with? msg ".say ") (let ([tokens (string-split (substring msg 5))])
+                                           (write-to-thing (string-join (cdr tokens))
+                                                           (channelize (car tokens))))]
+    [(string-starts-with? msg ".do ") (let ([tokens (string-split (substring msg 4))])
+                                           (act-to-thing (string-join (cdr tokens))
+                                                         (channelize (car tokens))))]
     [(equal? ".test" msg) (write-to-user "caught .test" nick)]
     [(equal? ".names" msg) (begin (names-from-channel)
                                   (write-to-user
