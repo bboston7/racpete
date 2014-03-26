@@ -154,6 +154,7 @@ Parameters
      (handle-part (string-trim line))]
     [(regexp-match #px"^\\S* NICK " line)
      (handle-nick (string-trim line))]
+    [(regexp-match #px"^\\S* KICK " line) (handle-kick)]
     [(regexp-match (string-append "^.* PRIVMSG " CHAN) line) ; for channel-level
      (handle-privmsg chanmsg-func (string-trim line))]
     [(regexp-match (string-append "^.* PRIVMSG " NICK) line) ; for pm-level
@@ -206,6 +207,11 @@ Reconnect to the server
   (set!-values (input output) (tcp-connect HOST PORT))
   (identify)
   (join))
+
+#|
+|#
+(: handle-kick (-> Any))
+(define (handle-kick) (join))
 
 #|
 Starts the bot
