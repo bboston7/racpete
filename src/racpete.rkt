@@ -180,5 +180,5 @@ Given a string, returns a quote containing that string
         (λ () (what-would-say NICK
                               quotes
                               (λ (x) (write-to-channel (chop-token x)))))
-        (λ () (chop-token (write-to-channel (pick-random quotes))))))
+        (λ () (write-to-channel (chop-token (pick-random quotes))))))
 (start-pete command-handler priv-command-handler)
