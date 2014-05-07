@@ -10,6 +10,7 @@
   "commands/ballsohard.rkt"
   "commands/games.rkt"
   "commands/what-say.rkt"
+  "commands/stimulate.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/names-manager.rkt"
@@ -67,6 +68,7 @@ Log a line from the chat
 Handles incoming user irc commands
 |#
 (define (command-handler nick msg)
+  (ping-stimulator)
   (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(string-starts-with? msg ".swagtag ") (write-to-channel (swag-tag nick (substring msg 9) (current-nicks) NICK))]
@@ -173,4 +175,10 @@ Given a string, returns a quote containing that string
           (string-append "Cache miss!  Tell me about" token)
           (chop-token (list-ref matches (random (length matches)))))))))
 
+(start-stimulator
+  (list handle-link-me
+        (λ () (what-would-say NICK
+                              quotes
+                              (λ (x) (write-to-channel (chop-token x)))))
+        (λ () (chop-token (write-to-channel (pick-random quotes))))))
 (start-pete command-handler priv-command-handler)

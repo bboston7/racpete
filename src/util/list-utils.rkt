@@ -5,7 +5,7 @@
 #|
 Picks a random element from the list
 |#
-(: pick-random ((Listof Any) -> Any))
+(: pick-random (All (A) ((Listof A) -> (Option A))))
 (define (pick-random lst)
   (let ([len (length lst)])
     (if (zero? len)
