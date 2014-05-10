@@ -24,7 +24,7 @@ out
 (define (start-stimulator fns)
   (: stim-loop (-> Any))
   (define (stim-loop)
-    (when (> (current-seconds) next-stim)
+    (when (>= (current-seconds) next-stim)
       ((assert (pick-random fns)))
       (ping-stimulator))
     ; Wait until next stim, then re-check condition
