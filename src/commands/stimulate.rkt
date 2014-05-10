@@ -6,13 +6,14 @@
 (provide ping-stimulator
          start-stimulator)
 
-; Stimulate conversation after an hour of inactivity
-(define STIMULATION_TIME_S (* 60 60))
+; Stimulate conversation after an hour of inactivity (on average)
+(define STIMULATION_TIME_MAX_S (* 2 60 60))
 
-; Time in seconds of the last message
-(define last-message (current-seconds))
+; Time in seconds for next stimulation (Add 10 to give bot time to connect)
+(define next-stim (+ (current-seconds) (random STIMULATION_TIME_MAX_S) 10))
 
-(define (ping-stimulator) (set! last-message (current-seconds)))
+; Set the time for the next-stim (Add 2 to avoid negative sleep)
+(define (ping-stimulator) (set! next-stim (+ (current-seconds) (random STIMULATION_TIME_MAX_S))))
 
 #|
 Starts the conversation stimulator.  After STIMULATION_TIME_S seconds have
@@ -23,11 +24,11 @@ out
 (define (start-stimulator fns)
   (: stim-loop (-> Any))
   (define (stim-loop)
-    (when (> (- (current-seconds) last-message) STIMULATION_TIME_S)
+    (when (> (current-seconds) next-stim)
       ((assert (pick-random fns)))
       (ping-stimulator))
-    ; Wait a minute before re-checking the condition
-    (sleep 60)
+    ; Wait until next stim, then re-check condition
+    (sleep (- next-stim (current-seconds)))
     (stim-loop))
   (when (null? fns) (raise-argument-error 'fns "non-empty list" fns))
   (thread stim-loop))
