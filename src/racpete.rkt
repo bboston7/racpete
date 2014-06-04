@@ -11,6 +11,7 @@
   "commands/games.rkt"
   "commands/what-say.rkt"
   "commands/stimulate.rkt"
+  "commands/learn-about.rkt"
   "config.rkt"
   "util/connection.rkt"
   "util/names-manager.rkt"
@@ -79,7 +80,8 @@ Handles incoming user irc commands
       [(equal? ".boom" msg) (write-to-channel "BOOM GOES THE DYNAMITE!")]
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
-      [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg))]
+      [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg quotes))]
+      [(string-starts-with? msg ".rx ") (write-to-channel (egrep msg quotes))]
       [(regexp-match #rx"what has (.*) said\\?" msg)
          => (lambda (x) (has-said (cadr x) quotes write-to-channel))]
       [(regexp-match #rx"what would (.*) say\\?" msg)
@@ -162,18 +164,6 @@ Handles searching youtube
 |#
 (define (handle-youtube-search msg)
   (thread (lambda () (query-youtube (substring msg 4) write-to-channel))))
-
-#|
-Given a string, returns a quote containing that string
-|#
-(define (learn-about msg)
-  (let ([token (string-append " " (string-join (cdddr (string-split msg))))])
-    (if (equal? (string-trim token) "")
-      #f
-      (let ([matches (filter (lambda (x) (string-contains? x token)) quotes)])
-        (if (null? matches)
-          (string-append "Cache miss!  Tell me about" token)
-          (chop-token (list-ref matches (random (length matches)))))))))
 
 (start-stimulator
   (list handle-link-me
