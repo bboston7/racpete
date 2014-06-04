@@ -79,7 +79,7 @@ Given a nick and a quote list, calls fn on a quote formed from that person
 |#
 (define (what-would-say nick quotes fn)
   (thread (lambda ()
-    (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
+    (let* ([rx (pregexp (string-append "^\\<" (regexp-quote nick) "\\>"))]
           [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
       (fn (say-quote nick (if (equal? nick NICK)
                         (make-quote (map chop-token quotes))
@@ -92,7 +92,7 @@ Given a nick, calls fn on a quote from that person
 |#
 (define (has-said nick quotes fn)
   (thread (lambda ()
-    (let* ([rx (pregexp (string-append "^\\<" nick "\\>"))]
+    (let* ([rx (pregexp (string-append "^\\<" (regexp-quote nick) "\\>"))]
           [matches (filter (lambda (x) (regexp-match? rx x)) quotes)])
       (fn (if (null? matches)
         (string-append "Unfortunately, " nick " has never spoken.")
