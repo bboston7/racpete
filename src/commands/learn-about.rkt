@@ -13,7 +13,7 @@
         #f
         (let ([matches
                 (with-handlers ([exn:fail? (λ (_) (list "del Bad regex?  Bad you!"))])
-                  (filter (λ (x) (regexp-match (pregexp token) (strip-tags x)))
+                  (filter (λ (x) (regexp-match (pregexp token) (chop-token x)))
                           quotes))])
           (if (null? matches)
             (out (string-append "No matches for " token))
