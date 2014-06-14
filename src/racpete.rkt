@@ -137,7 +137,8 @@ Handles incoming user irc commands in private messages.
                                       "requested names on "
                                       CHAN)
                                     nick))]
-    [(equal? ".ycombinator" msg) (ycombo write-to-user nick)]))
+    [(equal? ".ycombinator" msg) (ycombo write-to-user nick)]
+    [(try-eval msg) => write-to-channel]))
 
 #|
 Handles a link me request
