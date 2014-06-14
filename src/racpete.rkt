@@ -19,6 +19,7 @@
   "util/list-utils.rkt"
   "util/urltilities.rkt"
   "util/morse.rkt"
+  "util/derek.rkt"
 )
 
 #|
@@ -108,6 +109,7 @@ Handles incoming user irc commands
                                   (string-append "kicks " (pick-random (current-nicks))))]
       [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
       [(string-starts-with? msg ".g") (handle-google-search msg)]
+      [(try-eval msg) => write-to-channel]
       [else (log nick msg)])))
 
 #|
