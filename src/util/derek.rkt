@@ -61,7 +61,7 @@ can compute.
     (error (lambda (a b c) #f))
     (precs (left + -)
            (left * / %)
-           (left ^)
+           (right ^)
            (nonassoc LPAREN RPAREN))))
 
 ;; Interpreter: returns #f if src program is malformed
@@ -130,4 +130,5 @@ can compute.
                        (string-append
                          (substring (number->string (expt 9999 9999)) 0 MAX-LEN)
                          "..."))
+         (check-equal? (try-eval "3 ^ 3 ^ 3") (number->string (expt 3 (expt 3 3))))
          )
