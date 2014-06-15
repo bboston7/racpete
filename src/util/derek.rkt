@@ -17,6 +17,7 @@ can compute.
 (define MAX-LEN 400)
 
 (struct num-node (n))
+(struct minus-num-node (n))
 (struct plus-node (l r))
 (struct minus-node (l r))
 (struct times-node (l r))
@@ -38,7 +39,13 @@ can compute.
          ["^" (token-^)]
          ["(" (token-LPAREN)]
          [")" (token-RPAREN)]
-         [(repetition 1 +inf.0 numeric) (token-NUM lexeme)]
+         [(union
+            (concatenation (repetition 1 +inf.0 numeric)
+                           (repetition 0 1 ".")
+                           (repetition 0 +inf.0 numeric))
+            (concatenation (repetition 0 +inf.0 numeric)
+                           (repetition 0 1 ".")
+                           (repetition 1 +inf.0 numeric))) (token-NUM lexeme)]
          [whitespace (scanner input-port)]
          [(eof) (token-END)]
          [any-char (token-FAIL)]))
@@ -48,6 +55,7 @@ can compute.
   (parser
     (grammar (E
                ((NUM) (num-node (string->number $1)))
+               ((- E) (prec +) (minus-num-node $2))
                ((E + E) (prec +) (plus-node $1 $3))
                ((E - E) (prec -) (minus-node $1 $3))
                ((E * E) (prec *) (times-node $1 $3))
@@ -68,6 +76,7 @@ can compute.
 (define (eval e)
   (match e
          [(struct num-node (n)) n]
+         [(struct minus-num-node (n)) (- (eval n))]
          [(struct plus-node (l r)) (+ (eval l) (eval r))]
          [(struct minus-node (l r)) (- (eval l) (eval r))]
          [(struct times-node (l r)) (* (eval l) (eval r))]
@@ -131,4 +140,25 @@ can compute.
                          (substring (number->string (expt 9999 9999)) 0 MAX-LEN)
                          "..."))
          (check-equal? (try-eval "3 ^ 3 ^ 3") (number->string (expt 3 (expt 3 3))))
+         (check-eq? (try-eval "-5") #f)
+         (check-equal? (try-eval "-5 + 4") (number->string (+ -5 4)))
+         (check-equal? (try-eval "-5 + 6") (number->string (+ -5 6)))
+         (check-equal? (try-eval "-5 * -6") (number->string (* -5 -6)))
+         (check-equal? (try-eval "-55 * -69") (number->string (* -55 -69)))
+         (check-equal? (try-eval "5 + -55 * -69 + 9")
+                       (number->string (+ 5 (* -55 -69) 9)))
+         (check-equal? (try-eval "1 + -6") (number->string (+ 1 -6)))
+         (check-equal? (try-eval "-71 + 6") (number->string (+ -71 6)))
+         (check-equal? (try-eval "-71^6") (number->string (- (expt 71 6))))
+         (check-equal? (try-eval "-88 -99") (number->string (+ -88 -99)))
+         (check-equal? (try-eval "-88 * 99") (number->string (* -88 99)))
+         (check-equal? (try-eval "4 + -88 * 99") (number->string (+ 4 (* -88 99))))
+         (check-equal? (try-eval "4.5 + 3.5") (number->string (+ 4.5 3.5)))
+         (check-equal? (try-eval "4.5 * 3.5") (number->string (* 4.5 3.5)))
+         (check-equal? (try-eval "4.7 / 3.5") (number->string (/ 4.7 3.5)))
+         (check-equal? (try-eval "9.222^9.555") (number->string (expt 9.222 9.555)))
+         (check-equal? (try-eval "1. + .5") (number->string (+ 1. .5)))
+         (check-eq? (try-eval ".") #f)
+         (check-equal? (try-eval "-0.") (number->string (- 0.)))
+         (check-equal? (try-eval ".12345^9") (number->string (expt .12345 9)))
          )
