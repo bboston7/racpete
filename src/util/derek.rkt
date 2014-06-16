@@ -28,9 +28,12 @@ can compute.
 (struct if-node (t e1 e2))
 (struct bool-node (b))
 (struct lt-node (l r))
+(struct let-in-node (i e1 e2))
+(struct var-node (i))
 
-(define-tokens ts (NUM BOOL))
-(define-empty-tokens ets (+ - * / % ^ < LPAREN RPAREN IF THEN ELSE END FAIL))
+(define-tokens ts (NUM BOOL VAR))
+(define-empty-tokens ets (+ - * / % ^ < = LPAREN RPAREN IF THEN ELSE LET IN
+                            LETEND END FAIL))
 
 ;; Scanner: returns #f on unmatchable input
 (define scanner
@@ -43,6 +46,7 @@ can compute.
          ["(" (token-LPAREN)]
          [")" (token-RPAREN)]
          ["<" (token-<)]
+         ["=" (token-=)]
          [(union
             (concatenation (repetition 1 +inf.0 numeric)
                            (repetition 0 1 ".")
@@ -55,6 +59,10 @@ can compute.
          ["else" (token-ELSE)]
          ["true" (token-BOOL #t)]
          ["false" (token-BOOL #f)]
+         ["let" (token-LET)]
+         ["in" (token-IN)]
+         ["end" (token-LETEND)]
+         [(repetition 1 +inf.0 alphabetic) (token-VAR lexeme)]
          [whitespace (scanner input-port)]
          [(eof) (token-END)]
          [any-char (token-FAIL)]))
@@ -65,6 +73,7 @@ can compute.
     (grammar (E
                ((NUM) (num-node (string->number $1)))
                ((BOOL) (bool-node $1))
+               ((VAR) (var-node $1))
                ((- E) (prec +) (minus-num-node $2))
                ((E + E) (prec +) (plus-node $1 $3))
                ((E - E) (prec -) (minus-node $1 $3))
@@ -75,12 +84,14 @@ can compute.
                ((E < E) (prec <) (lt-node $1 $3))
                ((LPAREN E RPAREN) (prec LPAREN) (paren-node $2))
                ((IF E THEN E ELSE E) (prec IF) (if-node $2 $4 $6))
+               ((LET VAR = E IN E LETEND) (prec LET) (let-in-node $2 $4 $6))
                ))
     (tokens ts ets)
     (start E)
     (end END)
     (error (lambda (a b c) #f))
     (precs (nonassoc IF THEN ELSE)
+           (nonassoc LET)
            (nonassoc <)
            (left + -)
            (left * / %)
@@ -88,25 +99,27 @@ can compute.
            (nonassoc LPAREN RPAREN))))
 
 ;; typechecker
-(define (tc ast)
+(define (tc ast env)
   (let ([num? (lambda (x) (eq? x 'num))]
         [bool? (lambda (x) (eq? x 'bool))])
     (match ast
            [(struct num-node (_)) 'num]
            [(struct bool-node (_)) 'bool]
-           [(struct plus-node (l r)) (and (num? (tc l)) (num? (tc r)) 'num)]
-           [(struct minus-node (l r)) (and (num? (tc l)) (num? (tc r)) 'num)]
-           [(struct times-node (l r)) (and (num? (tc l)) (num? (tc r)) 'num)]
-           [(struct divide-node (l r)) (and (num? (tc l)) (num? (tc r)) 'num)]
-           [(struct mod-node (l r)) (and (num? (tc l)) (num? (tc r)) 'num)]
-           [(struct power-node (l r)) (and (num? (tc l)) (num? (tc r)) 'num)]
-           [(struct minus-num-node (n)) (and (num? (tc n)) 'num)]
-           [(struct paren-node (e)) (tc e)]
-           [(struct lt-node (l r)) (and (num? (tc l)) (num? (tc r)) 'bool)]
-           [(struct if-node (t e1 e2)) (let ([tt (tc t)]
-                                             [e1t (tc e1)]
-                                             [e2t (tc e2)])
+           [(struct plus-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'num)]
+           [(struct minus-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'num)]
+           [(struct times-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'num)]
+           [(struct divide-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'num)]
+           [(struct mod-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'num)]
+           [(struct power-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'num)]
+           [(struct minus-num-node (n)) (and (num? (tc n env)) 'num)]
+           [(struct paren-node (e)) (tc e env)]
+           [(struct lt-node (l r)) (and (num? (tc l env)) (num? (tc r env)) 'bool)]
+           [(struct if-node (t e1 e2)) (let ([tt (tc t env)]
+                                             [e1t (tc e1 env)]
+                                             [e2t (tc e2 env)])
                                          (and (bool? tt) (eq? e1t e2t) e1t))]
+           [(struct let-in-node (i e1 e2)) (tc e2 (cons `(,i . ,(tc e1 env)) env))]
+           [(struct var-node (i)) (let ([t (assoc i env)]) (and t (cdr t)))]
            [_ (error "unrecognized case in tc")]
            )))
 
@@ -120,24 +133,26 @@ can compute.
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
 ;; program.  If the input expression is well-formed, this will never "get stuck"
-(define (eval e)
-  (define (eval* e)
+(define (eval e env)
+  (define (eval* e env)
     (match e
            [(struct num-node (n)) n]
            [(struct bool-node (b)) b]
-           [(struct minus-num-node (n)) (- (eval* n))]
-           [(struct plus-node (l r)) (+ (eval* l) (eval* r))]
-           [(struct minus-node (l r)) (- (eval* l) (eval* r))]
-           [(struct times-node (l r)) (* (eval* l) (eval* r))]
-           [(struct divide-node (l r)) (/ (eval* l) (eval* r))]
-           [(struct mod-node (l r)) (modulo (eval* l) (eval* r))]
-           [(struct power-node (l r)) (expt (eval* l) (eval* r))]
-           [(struct paren-node (e)) (eval* e)]
-           [(struct lt-node (l r)) (< (eval* l) (eval* r))]
-           [(struct if-node (t e1 e2)) (if (eval* t) (eval* e1) (eval* e2))]
+           [(struct var-node (i)) (cdr (assoc i env))]
+           [(struct minus-num-node (n)) (- (eval* n env))]
+           [(struct plus-node (l r)) (+ (eval* l env) (eval* r env))]
+           [(struct minus-node (l r)) (- (eval* l env) (eval* r env))]
+           [(struct times-node (l r)) (* (eval* l env) (eval* r env))]
+           [(struct divide-node (l r)) (/ (eval* l env) (eval* r env))]
+           [(struct mod-node (l r)) (modulo (eval* l env) (eval* r env))]
+           [(struct power-node (l r)) (expt (eval* l env) (eval* r env))]
+           [(struct paren-node (e)) (eval* e env)]
+           [(struct lt-node (l r)) (< (eval* l env) (eval* r env))]
+           [(struct if-node (t e1 e2)) (if (eval* t env) (eval* e1 env) (eval* e2 env))]
+           [(struct let-in-node (i e1 e2)) (eval* e2 (cons `(,i . ,(eval* e1 env)) env))]
            [_ (error "unrecognized case in eval")]
            ))
-  (res (eval* e)))
+  (res (eval* e env)))
 
 ;; attempts to eval the source program s with a timeout.  returns #f on failure
 (define (try-eval s)
@@ -146,12 +161,12 @@ can compute.
          [ast (with-handlers
                 ([exn:fail:read? (lambda (exn) #f)])
                 (parse gen))])
-    (if (and ast (tc ast))
+    (if (and ast (tc ast null))
       (let* ([eng (engine (lambda (b)
                             (with-handlers
                               ([exn:fail:contract:divide-by-zero?
                                  (lambda (exn) "divide by zero")])
-                              (eval ast))))]
+                              (eval ast null))))]
              [ans (if (engine-run TIMEOUT eng) (engine-result eng) "timeout")])
         (cond [(string? ans) ans] ;; error message
               [ans (let* ([sans (r->s ans)]
@@ -251,4 +266,28 @@ can compute.
          (check-equal? (try-eval "20.5 < 20.2") "false")
          (check-equal? (try-eval "if 2 < 4 then 100 else 2")
                                  (number->string (if (< 2 4) 100 2)))
+
+         ;; let in variable tests
+         (check-eq? (try-eval "let x = 4 in y end") #f)
+         (check-eq? (try-eval "let x = a in y end") #f)
+         (check-eq? (try-eval "let x = a in x") #f)
+         (check-eq? (try-eval "let 5 = 4 in 4 end") #f)
+         (check-equal? (try-eval "let x = 4 in x end")
+                       (number->string (let ([x 4]) x)))
+         (check-equal? (try-eval "let x = 4 in x * 4 end")
+                       (number->string (let ([x 4]) (* x 4))))
+         (check-equal? (try-eval "33 + let x = 4 in x * 4 end")
+                       (number->string (+ 33 (let ([x 4]) (* x 4)))))
+         (check-equal? (try-eval "let x = 4 in if x < 5 then x else 44 end")
+                       (number->string (let ([x 4]) (if (< x 5) x 44))))
+         (check-equal? (try-eval "let x = 4 in 2 end")
+                       (number->string (let ([x 4]) 2)))
+         (check-equal? (try-eval "let x = 4 in x + x end")
+                       (number->string (let ([x 4]) (+ x x))))
+         (check-equal? (try-eval "let y = 5 in let x = 4 in y + x end end")
+                       (number->string (let ([y 5]) (let ([x 4]) (+ y x)))))
+         (check-equal? (try-eval "let y = 5 in let y = 4 in y^2 end end")
+                       (number->string (let ([y 5]) (let ([y 4]) (expt y 2)))))
+         (check-equal? (try-eval "let maxiscool = 5 in maxiscool+1 end")
+                       (number->string (let ([maxiscool 5]) (+ maxiscool 1))))
          )
