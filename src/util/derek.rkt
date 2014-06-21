@@ -15,6 +15,9 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 (define TIMEOUT 2000)
 (define MAX-LEN 400)
 
+(define global-env null)
+(define global-static-env null)
+
 ;; exp nodes
 (struct num-node (n))
 (struct minus-num-node (n))
@@ -29,7 +32,9 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 (struct bool-node (b))
 (struct lt-node (l r))
 (struct let-in-node (i e1 e2))
+(struct let-node (i e))
 (struct let-rec-in-node (f x t e1 e2))
+(struct let-rec-node (f x t e))
 (struct var-node (i))
 (struct lambda-node (x t e))
 (struct app-node (e1 e2))
@@ -42,6 +47,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 
 ;; need mutability to implement let rec
 (struct closure (e env arg) #:mutable)
+(struct binding (i v))
 
 (define-tokens ts (NUM BOOL VAR))
 (define-empty-tokens ets (+ - * / % ^ < = : LPAREN RPAREN IF THEN ELSE LET IN
@@ -89,7 +95,13 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 ;; Parser: returns #f on parsing failure
 (define parse
   (parser
-    (grammar (E
+    (grammar (TOP
+               ((LET VAR = E LETEND) (prec LET) (let-node $2 $4))
+               ((LET REC VAR VAR : TYPE = E LETEND)
+                (prec LET) (let-rec-node $3 $4 $6 $8))
+               ((E) (exp-node $1))
+               )
+             (E
                ((IF E THEN E ELSE E) (prec IF) (if-node $2 $4 $6))
                ((LAMBDA VAR : TYPE DOT E) (prec LAMBDA) (lambda-node $2 $4 $6))
                ((- E) (prec +) (minus-num-node $2))
@@ -123,7 +135,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                )
              )
     (tokens ts ets)
-    (start E)
+    (start TOP)
     (end END)
     (error (lambda (a b c) #f))
     (precs (left APP)
@@ -162,6 +174,9 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                                              [e2t (tc e2 env)])
                                          (and (bool? tt) (equal? e1t e2t) e1t))]
            [(struct let-in-node (i e1 e2)) (tc e2 (cons `(,i . ,(tc e1 env)) env))]
+           [(struct let-node (i e))
+            (let ([t (tc e env)])
+              (and t (set! global-static-env (cons `(,i .  ,t) global-static-env)) t))]
            [(struct var-node (i)) (let ([t (assoc i env)]) (and t (cdr t)))]
            [(struct lambda-node (x t e)) (let ([rt (tc e (cons `(,x . ,t) env))])
                                            (and rt (arrowt-node t rt)))]
@@ -173,8 +188,15 @@ This is derek, an ML-like language that pete recognizes and can evaluate
            [(struct exp-node (e)) (tc e env)]
            [(struct let-rec-in-node (f x t e1 e2))
             (let ([rt (and (arrow? t)
-                           (tc e1 (cons `(,x . ,(arrowt-node-l t)) (cons `(,f . ,t) env))))])
-              (and rt (tc e2 (cons `(,f . ,t) env))))]
+                           (tc e1 (cons `(,x . ,(arrowt-node-l t))
+                                        (cons `(,f . ,t) env))))])
+              (and (not (equal? f x)) rt (tc e2 (cons `(,f . ,t) env))))]
+           [(struct let-rec-node (f x t e))
+            (let ([rt (and (arrow? t)
+                           (tc e (cons `(,x . ,(arrowt-node-l t))
+                                        (cons `(,f . ,t) env))))])
+              (and (not (equal? f x)) rt
+                   (set! global-static-env (cons `(,f . ,t) global-static-env)) t))]
            [_ (error "unrecognized case in tc")]
            )))
 
@@ -187,6 +209,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
     (cond [(boolean? v) (if v "true" "false")]
           [(number? v) (number->string v)]
           [(closure? v) "<fun>"]
+          [(binding? v) (string-append (binding-i v) " = " (binding-v v))]
           [else (error "unrecognized type")])))
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
@@ -198,6 +221,14 @@ This is derek, an ML-like language that pete recognizes and can evaluate
            [(struct bool-node (b)) b]
            [(struct lambda-node (x t e)) (closure e env x)]
            [(struct var-node (i)) (cdr (assoc i env))]
+           [(struct let-node (i e)) (let ([v (eval* e env)])
+                                      (set! global-env (cons `(,i . ,v) global-env))
+                                      (binding i v))]
+           [(struct let-rec-node (f x t e))
+            (let ([fn (closure e (void) x)])
+              (set-closure-env! fn (cons `(,f . ,fn) env))
+              (set! global-env (cons `(,f . ,fn) global-env))
+              (binding f "<fun>"))]
            [(struct minus-num-node (n)) (- (eval* n env))]
            [(struct plus-node (l r)) (+ (eval* l env) (eval* r env))]
            [(struct minus-node (l r)) (- (eval* l env) (eval* r env))]
@@ -229,12 +260,12 @@ This is derek, an ML-like language that pete recognizes and can evaluate
          [ast (with-handlers
                 ([exn:fail:read? (lambda (exn) #f)])
                 (parse gen))])
-    (if (and ast (tc ast null))
+    (if (and ast (tc ast global-static-env))
       (let* ([eng (engine (lambda (b)
                             (with-handlers
                               ([exn:fail:contract:divide-by-zero?
                                  (lambda (exn) "divide by zero")])
-                              (eval ast null))))]
+                              (eval ast global-env))))]
              [ans (if (engine-run TIMEOUT eng) (engine-result eng) "timeout")])
         (cond [(string? ans) ans] ;; error message
               [ans (let* ([sans (r->s ans)]
@@ -335,7 +366,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
          (check-equal? (try-eval "if 2 < 4 then 100 else 2")
                                  (number->string (if (< 2 4) 100 2)))
 
-         ;; let in variable tests
+         ;; let/in variable tests
          (check-eq? (try-eval "let x = 4 in y end") #f)
          (check-eq? (try-eval "let x = a in y end") #f)
          (check-eq? (try-eval "let x = a in x") #f)
@@ -358,6 +389,8 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                        (number->string (let ([y 5]) (let ([y 4]) (expt y 2)))))
          (check-equal? (try-eval "let maxiscool = 5 in maxiscool+1 end")
                        (number->string (let ([maxiscool 5]) (+ maxiscool 1))))
+         (check-equal? (try-eval "let rec fact n : num -> num = if n < 2 then 1
+                                 else n * fact (n-1) end") "fact = <fun>")
 
          ;; function tests
          (check-equal? (try-eval "\\ x : num . x + 100") "<fun>")
