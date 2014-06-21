@@ -32,7 +32,6 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 (struct bool-node (b))
 (struct lt-node (l r))
 (struct let-in-node (i e1 e2))
-(struct let-node (i e))
 (struct let-rec-in-node (f x t e1 e2))
 (struct let-rec-node (f x t e))
 (struct var-node (i))
@@ -96,7 +95,6 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 (define parse
   (parser
     (grammar (TOP
-               ((LET VAR = E LETEND) (prec LET) (let-node $2 $4))
                ((LET REC VAR VAR : TYPE = E LETEND)
                 (prec LET) (let-rec-node $3 $4 $6 $8))
                ((E) (exp-node $1))
@@ -174,9 +172,6 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                                              [e2t (tc e2 env)])
                                          (and (bool? tt) (equal? e1t e2t) e1t))]
            [(struct let-in-node (i e1 e2)) (tc e2 (cons `(,i . ,(tc e1 env)) env))]
-           [(struct let-node (i e))
-            (let ([t (tc e env)])
-              (and t (set! global-static-env (cons `(,i .  ,t) global-static-env)) t))]
            [(struct var-node (i)) (let ([t (assoc i env)]) (and t (cdr t)))]
            [(struct lambda-node (x t e)) (let ([rt (tc e (cons `(,x . ,t) env))])
                                            (and rt (arrowt-node t rt)))]
@@ -221,9 +216,6 @@ This is derek, an ML-like language that pete recognizes and can evaluate
            [(struct bool-node (b)) b]
            [(struct lambda-node (x t e)) (closure e env x)]
            [(struct var-node (i)) (cdr (assoc i env))]
-           [(struct let-node (i e)) (let ([v (eval* e env)])
-                                      (set! global-env (cons `(,i . ,v) global-env))
-                                      (binding i (res v)))]
            [(struct let-rec-node (f x t e))
             (let ([fn (closure e (void) x)])
               (set-closure-env! fn (cons `(,f . ,fn) env))
@@ -391,11 +383,6 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                        (number->string (let ([maxiscool 5]) (+ maxiscool 1))))
          (check-equal? (try-eval "let rec fact n : num -> num = if n < 2 then 1
                                  else n * fact (n-1) end") "fact = <fun>")
-         (check-equal? (try-eval "let john = 4 end") "john = 4")
-         (check-equal? (try-eval "let john = 33 + 33 end") "john = 66")
-         (check-eq? (try-eval "let john = true + 33 end") #f)
-         (check-equal? (try-eval "let john = if true then false else true end")
-                       "john = false")
 
          ;; function tests
          (check-equal? (try-eval "\\ x : num . x + 100") "<fun>")
