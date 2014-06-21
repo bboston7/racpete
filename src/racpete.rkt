@@ -20,6 +20,7 @@
   "util/urltilities.rkt"
   "util/morse.rkt"
   "util/derek.rkt"
+  "util/sarah.rkt"
 )
 
 #|
@@ -77,6 +78,7 @@ Handles incoming user irc commands
       [(equal? ".q" msg) (write-to-channel (pick-random quotes))]
       [(equal? "mux" msg) (write-to-channel "juhn")]
       [(equal? "derp" msg) (write-to-channel "meep")]
+      [(equal? "YO" msg) (write-to-channel "YO")]
       [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
       [(equal? ".boom" msg) (write-to-channel "BOOM GOES THE DYNAMITE!")]
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
@@ -111,6 +113,7 @@ Handles incoming user irc commands
       [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
       [(string-starts-with? msg ".g") (handle-google-search msg)]
       [(try-eval msg) => write-to-channel]
+      [(try-sarah msg) => write-to-channel]
       [else (log nick msg)])))
 
 #|
