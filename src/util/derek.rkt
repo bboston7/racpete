@@ -209,7 +209,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
     (cond [(boolean? v) (if v "true" "false")]
           [(number? v) (number->string v)]
           [(closure? v) "<fun>"]
-          [(binding? v) (string-append (binding-i v) " = " (binding-v v))]
+          [(binding? v) (string-append (binding-i v) " = " (r->s (binding-v v)))]
           [else (error "unrecognized type")])))
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
@@ -223,12 +223,12 @@ This is derek, an ML-like language that pete recognizes and can evaluate
            [(struct var-node (i)) (cdr (assoc i env))]
            [(struct let-node (i e)) (let ([v (eval* e env)])
                                       (set! global-env (cons `(,i . ,v) global-env))
-                                      (binding i v))]
+                                      (binding i (res v)))]
            [(struct let-rec-node (f x t e))
             (let ([fn (closure e (void) x)])
               (set-closure-env! fn (cons `(,f . ,fn) env))
               (set! global-env (cons `(,f . ,fn) global-env))
-              (binding f "<fun>"))]
+              (binding f (res fn)))]
            [(struct minus-num-node (n)) (- (eval* n env))]
            [(struct plus-node (l r)) (+ (eval* l env) (eval* r env))]
            [(struct minus-node (l r)) (- (eval* l env) (eval* r env))]
@@ -391,6 +391,11 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                        (number->string (let ([maxiscool 5]) (+ maxiscool 1))))
          (check-equal? (try-eval "let rec fact n : num -> num = if n < 2 then 1
                                  else n * fact (n-1) end") "fact = <fun>")
+         (check-equal? (try-eval "let john = 4 end") "john = 4")
+         (check-equal? (try-eval "let john = 33 + 33 end") "john = 66")
+         (check-eq? (try-eval "let john = true + 33 end") #f)
+         (check-equal? (try-eval "let john = if true then false else true end")
+                       "john = false")
 
          ;; function tests
          (check-equal? (try-eval "\\ x : num . x + 100") "<fun>")
