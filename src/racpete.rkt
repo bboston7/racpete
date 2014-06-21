@@ -20,6 +20,7 @@
   "util/urltilities.rkt"
   "util/morse.rkt"
   "util/derek.rkt"
+  "util/sarah.rkt"
 )
 
 #|
@@ -110,6 +111,7 @@ Handles incoming user irc commands
       [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
       [(string-starts-with? msg ".g") (handle-google-search msg)]
       [(try-eval msg) => write-to-channel]
+      [(try-sarah msg) => write-to-channel]
       [else (log nick msg)])))
 
 #|
