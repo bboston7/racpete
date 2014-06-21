@@ -77,6 +77,7 @@ Handles incoming user irc commands
       [(string-starts-with? msg ".swagtag ") (write-to-channel (swag-tag nick (substring msg 9) (current-nicks) NICK))]
       [(equal? ".q" msg) (write-to-channel (pick-random quotes))]
       [(equal? "mux" msg) (write-to-channel "juhn")]
+      [(equal? ".magic" msg) (write-to-channel "(ノﾟοﾟ)ノﾐ★゜・。。・゜゜・。。・゜☆゜・。。・゜゜・。。・゜゜・。。・゜☆゜・。。・゜゜・。。・゜")]
       [(equal? "derp" msg) (write-to-channel "meep")]
       [(equal? "YO" msg) (write-to-channel "YO")]
       [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
