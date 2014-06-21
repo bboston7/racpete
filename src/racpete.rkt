@@ -92,7 +92,7 @@ Handles incoming user irc commands
       [(regexp-match-exact? (pregexp (string-append NICK "\\b.*\\?")) msg) (write-to-channel (yesno))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(equal? ".plug" msg) (write-to-channel "help me out: http://www.github.com/bboston7/racpete")]
-      [(regexp-match #rx"(?i:i love you(,)? petebot)" msg) (write-to-channel "Sorry, meatsack. You know I don't do that.")]
+      [(regexp-match (regexp (string-append "(?i:i love you(,)? " NICK ")")) msg) (write-to-channel "Sorry, meatsack. You know I don't do that.")]
       [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
       [(contains-morse? msg) (begin
