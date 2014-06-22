@@ -21,6 +21,7 @@
   "util/morse.rkt"
   "util/derek.rkt"
   "util/sarah.rkt"
+  "util/respond.rkt"
 )
 
 #|
@@ -74,14 +75,10 @@ Handles incoming user irc commands
   (ping-stimulator)
   (let ([urlres (regexp-match urlregex msg)])
     (cond
+      [(equal? ".test" msg) (write-to-channel "caught .test")]
       [(string-starts-with? msg ".swagtag ") (write-to-channel (swag-tag nick (substring msg 9) (current-nicks) NICK))]
+      [(msg-respond? msg) => write-to-channel]
       [(equal? ".q" msg) (write-to-channel (pick-random quotes))]
-      [(equal? "mux" msg) (write-to-channel "juhn")]
-      [(equal? ".magic" msg) (write-to-channel "(ノﾟοﾟ)ノﾐ★゜・。。・゜゜・。。・゜☆゜・。。・゜゜・。。・゜゜・。。・゜☆゜・。。・゜゜・。。・゜")]
-      [(equal? "derp" msg) (write-to-channel "meep")]
-      [(equal? "YO" msg) (write-to-channel "YO")]
-      [(equal? "has anyone done the ruzzler" msg) (write-to-channel "probably not")]
-      [(equal? ".boom" msg) (write-to-channel "BOOM GOES THE DYNAMITE!")]
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg quotes))]
@@ -92,15 +89,12 @@ Handles incoming user irc commands
          => (lambda (x) (what-would-say (cadr x) quotes write-to-channel))]
       [(regexp-match-exact? (pregexp (string-append NICK "\\b.*\\?")) msg) (write-to-channel (yesno))]
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
-      [(equal? ".plug" msg) (write-to-channel "help me out: http://www.github.com/bboston7/racpete")]
-      [(regexp-match (regexp (string-append "(?i:i love you(,)? " NICK ")")) msg) (write-to-channel "Sorry, meatsack. You know I don't do that.")]
       [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
       [(contains-morse? msg) (begin
                                (write-to-channel (convert-morse (parse-morse msg)))
                                (log nick msg))]
       [urlres (handle-url-match urlres nick msg)]
-      [(equal? ".test" msg) (write-to-channel "caught .test")]
       [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
