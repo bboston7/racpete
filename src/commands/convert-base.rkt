@@ -8,10 +8,9 @@
 Convert num from base from-rad to base to-rad
 |#
 (define (convert-base num from-rad to-rad)
-	(cond
-		[(not (andmap string? (list num from-rad to-rad))) #f]
-		[else (convert-to-string (string->number num (string->number from-rad))
-									(string->number to-rad))]))
+  	(with-handlers ([exn:fail? (lambda (v) #f)])
+        (convert-to-string (string->number num (string->number from-rad))
+                      (string->number to-rad))))
 
 ; #|
 ; Converts num to a string with radix to-rad
