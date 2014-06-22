@@ -112,7 +112,7 @@ Handles incoming user irc commands
       [(equal? ".roulette" msg) (act-to-channel
                                   (string-append "kicks " (pick-random (current-nicks))))]
       [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
-      [(string-starts-with? msg ".g") (handle-google-search msg)]
+      [(string-starts-with? msg ".g ") (handle-google-search msg)]
       [(try-eval msg) => write-to-channel]
       [(try-sarah msg) => write-to-channel]
       [else (log nick msg)])))
