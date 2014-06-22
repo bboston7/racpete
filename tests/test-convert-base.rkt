@@ -22,8 +22,8 @@ Test that we can properly convert to and from various bases
 
 	; Edge cases because if there's a way to break it, max WILL break it
 	(check-equal? #f (convert-base 5 "9" "4"))
-	(check-equal? #f (convert-base "5" 9 "4"))
-	(check-equal? #f (convert-base "5" "9" 4))
+	(check-equal? #f (convert-base "5" '() "4"))
+	(check-equal? #f (convert-base "5" "9" #f))
 	(check-equal? #f (convert-base 5 9 "4"))
 	(check-equal? #f (convert-base 5 "9" 4))
 	(check-equal? #f (convert-base "5" 9 4))
