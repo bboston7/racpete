@@ -2,25 +2,26 @@
 #lang racket
 
 (require
-  "commands/ycombinator.rkt"
-  "commands/web-queries.rkt"
-  "commands/kwanzaa.rkt"
   "commands/auth-commands.rkt"
-  "commands/yesno.rkt"
   "commands/ballsohard.rkt"
+  "commands/convert-base.rkt"
   "commands/games.rkt"
-  "commands/what-say.rkt"
-  "commands/stimulate.rkt"
+  "commands/kwanzaa.rkt"
   "commands/learn-about.rkt"
+  "commands/stimulate.rkt"
+  "commands/web-queries.rkt"
+  "commands/what-say.rkt"
+  "commands/ycombinator.rkt"
+  "commands/yesno.rkt"
   "config.rkt"
   "util/connection.rkt"
-  "util/names-manager.rkt"
-  "util/string-utils.rkt"
-  "util/list-utils.rkt"
-  "util/urltilities.rkt"
-  "util/morse.rkt"
   "util/derek.rkt"
+  "util/list-utils.rkt"
+  "util/morse.rkt"
+  "util/names-manager.rkt"
   "util/sarah.rkt"
+  "util/string-utils.rkt"
+  "util/urltilities.rkt"
 )
 
 #|
@@ -84,6 +85,9 @@ Handles incoming user irc commands
       [(equal? ".boom" msg) (write-to-channel "BOOM GOES THE DYNAMITE!")]
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
+      [(string-starts-with? msg ".c") (write-to-channel (convert-base (second (string-split msg))
+                                                                      (third (string-split msg))
+                                                                      (fourth (string-split msg))))]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg quotes))]
       [(string-starts-with? msg ".rx ") (egrep msg quotes write-to-channel)]
       [(regexp-match #rx"what has (.*) said\\?" msg)
