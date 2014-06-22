@@ -8,12 +8,12 @@
 Convert num from base from-rad to base to-rad
 |#
 (define (convert-base num from-rad to-rad)
-  	(with-handlers ([exn:fail? (lambda (v) #f)])
+  	(with-handlers ([exn:fail? (lambda (v) "No.")])
       (if (and (member (string->number to-rad) (range 2 17 1))
                (member (string->number from-rad) (range 2 17 1)))
         (convert-to-string (string->number num (string->number from-rad))
                            (string->number to-rad))
-      #f)))
+      "No.")))
 
 #|
 Converts num to a string with radix to-rad
