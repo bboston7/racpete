@@ -24,7 +24,13 @@
 Sets input to the input stream from the server and output to the output stream
 from our computer
 |#
-(define-values (input output) (tcp-connect HOST PORT))
+(: current-input (Parameterof Input-Port))
+(: current-output (Parameterof Output-Port))
+(define-values (current-input current-output)
+  (call-with-values
+    (lambda () (tcp-connect HOST PORT))
+    (lambda: ([input : Input-Port] [output : Output-Port])
+             (values (make-parameter input) (make-parameter output)))))
 
 #|
 Identifies with the IRC Server
@@ -50,8 +56,8 @@ Exits the program after cleaning up files/sockets
                        [Positive-Integer -> Any]))
 (define (clean-up-and-quit [code 0])
   (displayln "Cleaning up and quitting....")
-  (close-output-port output)
-  (close-input-port input)
+  (close-output-port (current-output))
+  (close-input-port (current-input))
   (exit code))
 
 #|
@@ -140,7 +146,7 @@ Parameters
 |#
 (: read-in ((String String -> Any) (String String -> Any) -> Any))
 (define (read-in chanmsg-func privmsg-func)
-  (define line (read-line input))
+  (define line (read-line (current-input)))
   (cond
     [(eof-object? line) (reconnect)]
     [(regexp-match #rx"^PING" line) (ping-respond line)]
@@ -191,20 +197,22 @@ Parameters
 |#
 (: send-string (String -> Any))
 (define (send-string str)
-  (write-string (string-append str "\r\n") output)
-  (flush-output output))
+  (write-string (string-append str "\r\n") (current-output))
+  (flush-output (current-output)))
 
 #|
 Reconnect to the server
 |#
 (: reconnect (-> Any))
 (define (reconnect)
-  (close-input-port input)
-  (close-output-port output)
+  (close-input-port (current-input))
+  (close-output-port (current-output))
   (printf "disconnected, reconnecting in ~a seconds\n" RECONNECT_TIMER)
   (sleep RECONNECT_TIMER)
   (displayln "reconnecting...")
-  (set!-values (input output) (tcp-connect HOST PORT))
+  (let-values ([(input output) (tcp-connect HOST PORT)])
+    (current-input input)
+    (current-output output))
   (identify)
   (join))
 
