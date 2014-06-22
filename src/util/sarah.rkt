@@ -127,7 +127,7 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                               ([exn:fail:contract:divide-by-zero?
                                  (lambda (exn) "divide by zero")]
                                [exn:fail?
-                                 (lambda (exn) "error")])
+                                 (lambda (exn) #f)])
                               (eval ast null))))]
              [ans (if (engine-run TIMEOUT eng) (engine-result eng) "timeout")])
         (cond [(string? ans) ans] ;; error message
@@ -169,9 +169,9 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah "(^ (- 5 2) (/ 6 7))")
                        (number->string (expt (- 5 2) (/ 6 7))))
 
-         (check-equal? (try-sarah "(x 4 9)") "error")
-         (check-equal? (try-sarah "(x+*-y! 4 9)") "error")
-         (check-equal? (try-sarah "(% 5 3 7)") "error")
-         (check-equal? (try-sarah "(^ 5 3 7)") "error")
+         (check-equal? (try-sarah "(x 4 9)") #f)
+         (check-equal? (try-sarah "(x+*-y! 4 9)") #f)
+         (check-equal? (try-sarah "(% 5 3 7)") #f)
+         (check-equal? (try-sarah "(^ 5 3 7)") #f)
 )
 
