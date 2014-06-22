@@ -17,29 +17,24 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (define MAX-LEN 400)
 
 ;; exp nodes
-(struct s-node (v a))
+(struct s-node (e as))
 (struct var-node (v))
 (struct let-node (vs e))
 (struct let-arg-node (v e))
+(struct lambda-node (a e))
+(struct builtin-node (s as))
 (struct num-node (n))
 (struct exp-node (e))
 
-;; type nodes, need transparency for equal? to work
-(struct numt-node () #:transparent)
+(struct closure (e env a))
 
-(define-tokens ts (NUM VAR))
-(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LET EOF FAIL))
+(define-tokens ts (NUM VAR BUILTIN))
+(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LET LAMBDA
+                          EOF FAIL))
 
 (define-lex-abbrev identic
   (:or alphabetic
        numeric
-       #\+
-       #\-
-       #\*
-       #\/
-       #\%
-       #\^
-       #\!
        ))
 
 ;; Scanner: returns #f on unmatchable input
@@ -49,6 +44,13 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          ["[" (token-LPAREN!)]
          ["]" (token-RPAREN!)]
          ["let" (token-LET)]
+         ["lambda" (token-LAMBDA)]
+         ["+" (token-BUILTIN lexeme)]
+         ["-" (token-BUILTIN lexeme)]
+         ["*" (token-BUILTIN lexeme)]
+         ["/" (token-BUILTIN lexeme)]
+         ["%" (token-BUILTIN lexeme)]
+         ["^" (token-BUILTIN lexeme)]
          [(::
             (:- identic numeric)
             (:* identic)) (token-VAR lexeme)]
@@ -68,7 +70,9 @@ This is sarah an s-expression based language that pete recognizes and can evalua
   (parser
     (grammar (E
                ((LPAREN LET LPAREN LETARGS RPAREN E RPAREN) (let-node $4 $6))
-               ((LPAREN VAR ARGS RPAREN) (s-node $2 $3))
+               ((LPAREN LAMBDA LPAREN VAR RPAREN E RPAREN) (lambda-node $4 $6))
+               ((LPAREN BUILTIN ARGS RPAREN) (builtin-node $2 $3))
+               ((LPAREN E ARGS RPAREN) (s-node $2 $3))
                ((NUM) (num-node (string->number $1)))
                ((VAR) (var-node $1))
                )
@@ -102,12 +106,13 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (define (r->s r)
   (let ([v (res-r r)])
     (cond [(number? v) (number->string v)]
+          [(closure? v) "<lambda>"]
           [else (error "unrecognized type")])))
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
 ;; program.  If the input expression is well-formed, this will never "get stuck"
 (define (eval e env)
-  (define (eval-s s args)
+  (define (eval-b s args)
     (match s
            ["+" (apply + args)]
            ["-" (apply - args)]
@@ -115,6 +120,15 @@ This is sarah an s-expression based language that pete recognizes and can evalua
            ["/" (apply / args)]
            ["%" (apply modulo args)]
            ["^" (apply expt args)]
+           [_ (error "unrecognized b-functor")]
+           ))
+  (define (eval-s s args env)
+    (match s
+           [(struct closure (e env a))
+            (let ([l (length args)])
+              (if (not (equal? l 1))
+                (raise-arity-error (string->symbol a) l)
+              (eval* e (cons `(,a . ,(car args)) env))))]
            [_ (error "unrecognized s-functor")]
            ))
   (define (add-env vs env)
@@ -127,7 +141,11 @@ This is sarah an s-expression based language that pete recognizes and can evalua
     (match e
            [(struct num-node (n)) n]
            [(struct var-node (v)) (cdr (assoc v env))]
-           [(struct s-node (v a)) (eval-s v (map (lambda (e) (eval* e env)) a))]
+           [(struct lambda-node (a e)) (closure e env a)]
+           [(struct builtin-node (s as)) (eval-b s (map (lambda (a) (eval* a env)) as))]
+           [(struct s-node (e as)) (eval-s (eval* e env)
+                                           (map (lambda (a) (eval* a env)) as)
+                                           env)]
            [(struct exp-node (e)) (eval* e env)]
            [(struct let-node (vs e)) (eval* e (add-env vs env))]
            [_ (error "unrecognized case in eval")]
@@ -146,6 +164,8 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                             (with-handlers
                               ([exn:fail:contract:divide-by-zero?
                                  (lambda (exn) "divide by zero")]
+                               [exn:fail:contract:arity?
+                                 (lambda (exn) "arity mismatch")]
                                [exn:fail?
                                  (lambda (exn) #f)])
                               (eval ast null))))]
@@ -174,6 +194,8 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah "(+ 1 1)") "2")
          (check-equal? (try-sarah " ( + 1 1 ) ") "2")
 
+         (check-equal? (try-sarah "(++ 1 1)") #f)
+
          (check-equal? (try-sarah "[+ 1 1]") #f)
          (check-equal? (try-sarah " [ + 1 1 ] ") #f)
          (check-equal? (try-sarah "[+ 1 1)") #f)
@@ -195,8 +217,8 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 
          (check-equal? (try-sarah "(x 4 9)") #f)
          (check-equal? (try-sarah "(x+*-y! 4 9)") #f)
-         (check-equal? (try-sarah "(% 5 3 7)") #f)
-         (check-equal? (try-sarah "(^ 5 3 7)") #f)
+         (check-equal? (try-sarah "(% 5 3 7)") "arity mismatch")
+         (check-equal? (try-sarah "(^ 5 3 7)") "arity mismatch")
 
          (check-equal? (try-sarah "(let ([x 5]) (+ 2 3))") "5")
          (check-equal? (try-sarah "(let ([x 5]) (+ x x))")
@@ -205,5 +227,29 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                        (number->string (let ([x 5] [y 6]) (* x y))))
          (check-equal? (try-sarah "(let ([x 5] [y 6]) (* x y))")
                        (number->string (let ([x 5] [y 6]) (* x y))))
+
+         (check-equal? (try-sarah
+                         "((lambda (x) (+ x 1)) 3)")
+                       (number->string
+                         ((lambda (x) (+ x 1)) 3)))
+         (check-equal? (try-sarah
+                         "((lambda (x) (+ x 1)) 3 5)")
+                       "arity mismatch")
+         (check-equal? (try-sarah "((lambda (x) 4))") "arity mismatch")
+
+         (check-equal? (try-sarah
+                         "(let ([fn (lambda (x) (* x 2))] [y 3]) (fn y))")
+                       (number->string
+                         (let ([fn (lambda (x) (* x 2))] [y 3]) (fn y))))
+         (check-equal? (try-sarah
+                         "(let ([x (lambda (x) (lambda (y) (+ x y)))]) ((x 3) 5))")
+                       (number->string
+                         (let ([x (lambda (x) (lambda (y) (+ x y)))]) ((x 3) 5))))
+         (check-equal? (try-sarah
+                         "(let ([x (lambda (x) (lambda (y) (+ x y)))]) (x 3))")
+                       "<lambda>")
+         (check-equal? (try-sarah
+                         "(let ([x (lambda (x) (lambda (y) (+ x y)))]) (x 3 5))")
+                       "arity mismatch")
 )
 
