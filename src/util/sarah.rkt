@@ -18,6 +18,9 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 
 ;; exp nodes
 (struct s-node (v a))
+(struct var-node (v))
+(struct let-node (vs e))
+(struct let-arg-node (v e))
 (struct num-node (n))
 (struct exp-node (e))
 
@@ -25,7 +28,7 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (struct numt-node () #:transparent)
 
 (define-tokens ts (NUM VAR))
-(define-empty-tokens ets (+ LPAREN RPAREN EOF FAIL))
+(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LET EOF FAIL))
 
 (define-lex-abbrev identic
   (:or alphabetic
@@ -43,6 +46,9 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (define scanner
   (lexer ["(" (token-LPAREN)]
          [")" (token-RPAREN)]
+         ["[" (token-LPAREN!)]
+         ["]" (token-RPAREN!)]
+         ["let" (token-LET)]
          [(::
             (:- identic numeric)
             (:* identic)) (token-VAR lexeme)]
@@ -61,23 +67,29 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (define parse
   (parser
     (grammar (E
+               ((LPAREN LET LPAREN LETARGS RPAREN E RPAREN) (let-node $4 $6))
                ((LPAREN VAR ARGS RPAREN) (s-node $2 $3))
-               ((F) (exp-node $1))
+               ((NUM) (num-node (string->number $1)))
+               ((VAR) (var-node $1))
                )
              (ARGS
                (() null)
                ((E ARGS) (cons $1 $2))
                )
-             (F
-               ((NUM) (num-node (string->number $1)))
+             (LETARGS
+               (() null)
+               ((LETARG LETARGS) (cons $1 $2))
+               )
+             (LETARG
+               ((LPAREN! VAR E RPAREN!) (let-arg-node $2 $3))
                )
              )
     (tokens ts ets)
     (start E)
     (end EOF)
     (error (lambda (a b c) #f))
-    (precs (nonassoc +)
-           (nonassoc LPAREN RPAREN)
+    (precs (nonassoc LPAREN RPAREN)
+           (nonassoc LPAREN! RPAREN!)
            )))
 
 ;; typechecker
@@ -105,11 +117,19 @@ This is sarah an s-expression based language that pete recognizes and can evalua
            ["^" (apply expt args)]
            [_ (error "unrecognized s-functor")]
            ))
+  (define (add-env vs env)
+    (match vs
+           ['() env]
+           [(cons (struct let-arg-node (v e)) rst)
+            (cons `(,v . ,(eval* e env)) (add-env rst env))]
+           ))
   (define (eval* e env)
     (match e
            [(struct num-node (n)) n]
+           [(struct var-node (v)) (cdr (assoc v env))]
            [(struct s-node (v a)) (eval-s v (map (lambda (e) (eval* e env)) a))]
            [(struct exp-node (e)) (eval* e env)]
+           [(struct let-node (vs e)) (eval* e (add-env vs env))]
            [_ (error "unrecognized case in eval")]
            ))
   (res (eval* e env)))
@@ -154,6 +174,10 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah "(+ 1 1)") "2")
          (check-equal? (try-sarah " ( + 1 1 ) ") "2")
 
+         (check-equal? (try-sarah "[+ 1 1]") #f)
+         (check-equal? (try-sarah " [ + 1 1 ] ") #f)
+         (check-equal? (try-sarah "[+ 1 1)") #f)
+
          (check-equal? (try-sarah "(* 4 9)") "36")
 
          (check-equal? (try-sarah "(+ 5 2 6 7)")
@@ -173,5 +197,13 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah "(x+*-y! 4 9)") #f)
          (check-equal? (try-sarah "(% 5 3 7)") #f)
          (check-equal? (try-sarah "(^ 5 3 7)") #f)
+
+         (check-equal? (try-sarah "(let ([x 5]) (+ 2 3))") "5")
+         (check-equal? (try-sarah "(let ([x 5]) (+ x x))")
+                       (number->string (let ([x 5]) (+ x x))))
+         (check-equal? (try-sarah "(let ([x 5]) (let ([y 6]) (* x y)))")
+                       (number->string (let ([x 5] [y 6]) (* x y))))
+         (check-equal? (try-sarah "(let ([x 5] [y 6]) (* x y))")
+                       (number->string (let ([x 5] [y 6]) (* x y))))
 )
 
