@@ -6,7 +6,7 @@
 )
 
 (require/typed racket
-               [string-split (String String -> (Listof String))]
+               [string-split (String String [#:trim? Boolean] -> (Listof String))]
                [string-replace (String String String -> String)]
                [string-trim (String -> String)])
 
@@ -177,9 +177,9 @@ fn - Function to pass nick and message to
 |#
 (: handle-privmsg ((String String -> Any) String -> Any))
 (define (handle-privmsg fn line)
-  (define tokens (string-split line ":"))
-  (define nick (car (string-split (car tokens) "!")))
-  (define msg (string-join (cdr tokens) ":"))
+  (define tokens (string-split line ":" #:trim? #f))
+  (define nick (car (string-split (cadr tokens) "!")))
+  (define msg (string-join (cddr tokens) ":"))
   (fn nick msg))
 
 #|
