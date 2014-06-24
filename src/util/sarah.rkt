@@ -141,6 +141,8 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          [(equal? #\^ c) (pop y stack
                          (pop x stack
                               (cons (builtin-node "^" (list x y)) stack)))]
+         [(equal? #\~ c) (pop x stack
+                              (cons (builtin-node "-" (list (num-node 0) x)) stack))]
          [(equal? #\, c) (pop y stack
                          (pop x stack
                               (cons x (cons y stack))))]
@@ -148,6 +150,12 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                          (pop e stack
                          (pop b stack
                               (cons (let-node (list (let-arg-node v e)) b) stack))))]
+         [(equal? #\\ c) (vpop a stack
+                         (pop b stack
+                              (cons (lambda-node a b) stack)))]
+         [(equal? #\$ c) (pop l stack
+                         (pop v stack
+                              (cons (s-node l (list v)) stack)))]
          [(char? c)
           (cond
             [(char-numeric? c) (cons (num-node (string->number (string c))) stack)]
@@ -337,8 +345,11 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 
 
          (check-equal? (try-polanski "2") "2")
+         (check-equal? (try-polanski "2~") "-2")
+         (check-equal? (try-polanski "2~~") "2")
          (check-equal? (try-polanski "23") "3")
          (check-equal? (try-polanski "234+") "7")
+         (check-equal? (try-polanski "3~4+~") "-1")
          (check-equal? (try-polanski "2 3 +") #f)
          (check-equal? (try-polanski "23,") "2")
 
@@ -372,5 +383,18 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                        (number->string (let ([x 5]) (+ x x))))
          (check-equal? (try-polanski "xy*6y:5x:")
                        (number->string (let ([x 5] [y 6]) (* x y))))
+
+         (check-equal? (try-polanski "3x1+x\\") "<lambda>")
+         (check-equal? (try-polanski "3x1+x\\$")
+                       (number->string
+                         ((lambda (x) (+ x 1)) 3)))
+         (check-equal? (try-polanski "yf$3y:x2*x\\f:")
+                       (number->string
+                         (let ([fn (lambda (x) (* x 2))] [y 3]) (fn y))))
+         (check-equal? (try-polanski "53x$$xy+y\\x\\x:")
+                       (number->string
+                         (let ([x (lambda (x) (lambda (y) (+ x y)))]) ((x 3) 5))))
+         (check-equal? (try-polanski "3x$xy+y\\x\\x:")
+                       "<lambda>")
 )
 
