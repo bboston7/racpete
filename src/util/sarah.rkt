@@ -23,15 +23,18 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (struct let-node (vs e))
 (struct let-arg-node (v e))
 (struct lambda-node (a e))
+(struct if-node (p t f))
 (struct builtin-node (s as))
 (struct num-node (n))
+(struct bool-node (b))
+(struct literal-node (l))
 (struct exp-node (e))
 
 (struct closure (e env a))
 
 (define-tokens ts (NUM VAR BUILTIN))
-(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LET LAMBDA
-                          EOF FAIL))
+(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LET LAMBDA IF
+                          TRUE FALSE EOF FAIL))
 
 (define-lex-abbrev identic
   (:or alphabetic
@@ -46,12 +49,24 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          ["]" (token-RPAREN!)]
          ["let" (token-LET)]
          ["lambda" (token-LAMBDA)]
+         ["if" (token-IF)]
          ["+" (token-BUILTIN lexeme)]
          ["-" (token-BUILTIN lexeme)]
          ["*" (token-BUILTIN lexeme)]
          ["/" (token-BUILTIN lexeme)]
          ["%" (token-BUILTIN lexeme)]
          ["^" (token-BUILTIN lexeme)]
+         ["<" (token-BUILTIN lexeme)]
+         ["<=" (token-BUILTIN lexeme)]
+         ["=" (token-BUILTIN lexeme)]
+         ["!=" (token-BUILTIN lexeme)]
+         [">=" (token-BUILTIN lexeme)]
+         [">" (token-BUILTIN lexeme)]
+         ["!" (token-BUILTIN lexeme)]
+         ["&" (token-BUILTIN lexeme)]
+         ["|" (token-BUILTIN lexeme)]
+         ["#t" (token-TRUE)]
+         ["#f" (token-FALSE)]
          [(::
             (:- identic numeric)
             (:* identic)) (token-VAR lexeme)]
@@ -77,9 +92,10 @@ This is sarah an s-expression based language that pete recognizes and can evalua
     (grammar (E
                ((LPAREN LET LPAREN LETARGS RPAREN E RPAREN) (let-node $4 $6))
                ((LPAREN LAMBDA LPAREN VAR RPAREN E RPAREN) (lambda-node $4 $6))
+               ((LPAREN IF E E E RPAREN) (if-node $3 $4 $5))
                ((LPAREN BUILTIN ARGS RPAREN) (builtin-node $2 $3))
                ((LPAREN E ARGS RPAREN) (s-node $2 $3))
-               ((NUM) (num-node (string->number $1)))
+               ((LITERAL) (literal-node $1))
                ((VAR) (var-node $1))
                )
              (ARGS
@@ -92,6 +108,11 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                )
              (LETARG
                ((LPAREN! VAR E RPAREN!) (let-arg-node $2 $3))
+               )
+             (LITERAL
+               ((NUM) (num-node (string->number $1)))
+               ((TRUE) (bool-node #t))
+               ((FALSE) (bool-node #f))
                )
              )
     (tokens ts ets)
@@ -119,30 +140,55 @@ This is sarah an s-expression based language that pete recognizes and can evalua
               [stack (cdr stack)])
           body)
         #f))
+    (define-syntax-rule (bool->num body)
+      (if-node body
+               (num-node 1)
+               (num-node 0)))
+    (define-syntax-rule (num->bool body)
+      (if-node (builtin-node "=" (list (num-node 0) body))
+               (bool-node #f)
+               (bool-node #t)))
+    (define-syntax-rule (op s stack)
+      (pop y stack
+      (pop x stack
+           (cons (builtin-node s (list x y)) stack))))
+    (define-syntax-rule (bool-op s stack)
+      (pop y stack
+      (pop x stack
+           (cons (bool->num (builtin-node s (list x y))) stack))))
     (match cs
       ['() '()]
       [(cons c stack)
        (cond
-         [(equal? #\+ c) (pop y stack
-                         (pop x stack
-                              (cons (builtin-node "+" (list x y)) stack)))]
-         [(equal? #\- c) (pop y stack
-                         (pop x stack
-                              (cons (builtin-node "-" (list x y)) stack)))]
-         [(equal? #\* c) (pop y stack
-                         (pop x stack
-                              (cons (builtin-node "*" (list x y)) stack)))]
-         [(equal? #\/ c) (pop y stack
-                         (pop x stack
-                              (cons (builtin-node "/" (list x y)) stack)))]
-         [(equal? #\% c) (pop y stack
-                         (pop x stack
-                              (cons (builtin-node "%" (list x y)) stack)))]
-         [(equal? #\^ c) (pop y stack
-                         (pop x stack
-                              (cons (builtin-node "^" (list x y)) stack)))]
+         [(equal? #\+ c) (op "+" stack)]
+         [(equal? #\- c) (op "-" stack)]
+         [(equal? #\* c) (op "*" stack)]
+         [(equal? #\/ c) (op "/" stack)]
+         [(equal? #\% c) (op "%" stack)]
+         [(equal? #\^ c) (op "^" stack)]
          [(equal? #\~ c) (pop x stack
                               (cons (builtin-node "-" (list (num-node 0) x)) stack))]
+         [(equal? #\< c) (bool-op "<" stack)]
+         [(equal? #\= c) (bool-op "=" stack)]
+         [(equal? #\> c) (bool-op ">" stack)]
+         [(equal? #\! c) (pop x stack
+                              (cons (if-node (builtin-node "=" (list (num-node 0) x))
+                                             (num-node 1)
+                                             (num-node 0)) stack))]
+         [(equal? #\& c) (pop x stack
+                         (pop y stack
+                              (cons (bool->num (builtin-node "&"
+                                                 (list (num->bool x)
+                                                       (num->bool y)))) stack)))]
+         [(equal? #\| c) (pop x stack
+                         (pop y stack
+                              (cons (bool->num (builtin-node "|"
+                                                 (list (num->bool x)
+                                                       (num->bool y)))) stack)))]
+         [(equal? #\? c) (pop p stack
+                         (pop t stack
+                         (pop f stack
+                              (cons (if-node (num->bool p) t f) stack))))]
          [(equal? #\, c) (pop y stack
                          (pop x stack
                               (cons x (cons y stack))))]
@@ -177,12 +223,21 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (define (r->s r)
   (let ([v (res-r r)])
     (cond [(number? v) (number->string v)]
+          [(boolean? v) (if v "#t" "#f")]
           [(closure? v) "<lambda>"]
           [else (error "unrecognized type")])))
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
 ;; program.  If the input expression is well-formed, this will never "get stuck"
 (define (eval e env)
+  (define (and- preds)
+    (if (null? preds)
+      #t
+      (and (car preds) (and- (cdr preds)))))
+  (define (or- preds)
+    (if (null? preds)
+      #f
+      (or (car preds) (or- (cdr preds)))))
   (define (eval-b s args)
     (match s
            ["+" (apply + args)]
@@ -191,6 +246,15 @@ This is sarah an s-expression based language that pete recognizes and can evalua
            ["/" (apply / args)]
            ["%" (apply modulo args)]
            ["^" (apply expt args)]
+           ["<" (apply < args)]
+           ["<=" (apply <= args)]
+           ["=" (apply = args)]
+           ["!=" (apply (compose not =) args)]
+           [">=" (apply >= args)]
+           [">" (apply > args)]
+           ["!" (apply not args)]
+           ["&" (and- args)]
+           ["|" (or- args)]
            [_ (error "unrecognized b-functor")]
            ))
   (define (eval-s s args env)
@@ -211,6 +275,8 @@ This is sarah an s-expression based language that pete recognizes and can evalua
   (define (eval* e env)
     (match e
            [(struct num-node (n)) n]
+           [(struct bool-node (b)) b]
+           [(struct literal-node (l)) (eval* l env)]
            [(struct var-node (v)) (cdr (assoc v env))]
            [(struct lambda-node (a e)) (closure e env a)]
            [(struct builtin-node (s as)) (eval-b s (map (lambda (a) (eval* a env)) as))]
@@ -219,6 +285,9 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                                            env)]
            [(struct exp-node (e)) (eval* e env)]
            [(struct let-node (vs e)) (eval* e (add-env vs env))]
+           [(struct if-node (p t f)) (if (eval* p env)
+                                       (eval* t env)
+                                       (eval* f env))]
            [_ (error "unrecognized case in eval")]
            ))
   (res (eval* e env)))
@@ -306,6 +375,29 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah "(^ (- 5 2) (/ 6 7))")
                        (number->string (expt (- 5 2) (/ 6 7))))
 
+         (check-equal? (try-sarah "(= 4 4)") "#t")
+         (check-equal? (try-sarah "(!= 4 4)") "#f")
+         (check-equal? (try-sarah "(<= 4 4)") "#t")
+         (check-equal? (try-sarah "(>= 4 4)") "#t")
+         (check-equal? (try-sarah "(< 3 4)") "#t")
+         (check-equal? (try-sarah "(> 3 4)") "#f")
+         (check-equal? (try-sarah "(< 2 5 7)") "#t")
+         (check-equal? (try-sarah "(< 6 5 7)") "#f")
+         (check-equal? (try-sarah "(! (< 6 5 7))") "#t")
+         (check-equal? (try-sarah "(+ #t #f)") #f)
+
+         (check-equal? (try-sarah "(& #t #f)") "#f")
+         (check-equal? (try-sarah "(& #t #f #t)") "#f")
+         (check-equal? (try-sarah "(& #t #t #t)") "#t")
+         (check-equal? (try-sarah "(| #t #f)") "#t")
+         (check-equal? (try-sarah "(| #t #f #f)") "#t")
+         (check-equal? (try-sarah "(| #f #f #f)") "#f")
+
+         (check-equal? (try-sarah "(if #t 64 23)") "64")
+         (check-equal? (try-sarah "(if #f 64 23)") "23")
+         (check-equal? (try-sarah "(if (> 3 4) (/ 5 0) 23)") "23")
+         (check-equal? (try-sarah "(+ (if (> 3 4) (/ 5 0) 23) 11)") "34")
+
          (check-equal? (try-sarah "(x 4 9)") #f)
          (check-equal? (try-sarah "(x+*-y! 4 9)") #f)
          (check-equal? (try-sarah "(% 5 3 7)") "arity mismatch")
@@ -375,6 +467,31 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                        (number->string (expt (- 5 2) (/ 6 7))))
 
          (check-equal? (try-polanski "52x67/^") #f)
+
+         (check-equal? (try-polanski "34<") "1")
+         (check-equal? (try-polanski "43<") "0")
+         (check-equal? (try-polanski "34=") "0")
+         (check-equal? (try-polanski "44=") "1")
+         (check-equal? (try-polanski "43>") "1")
+         (check-equal? (try-polanski "44>") "0")
+         (check-equal? (try-polanski "44>!") "1")
+         (check-equal? (try-polanski "4!") "0")
+         (check-equal? (try-polanski "4!!") "1")
+         (check-equal? (try-polanski "0!") "1")
+         (check-equal? (try-polanski "0!!") "0")
+
+         (check-equal? (try-polanski "00&") "0")
+         (check-equal? (try-polanski "01&") "0")
+         (check-equal? (try-polanski "11&") "1")
+         (check-equal? (try-polanski "00|") "0")
+         (check-equal? (try-polanski "10|") "1")
+         (check-equal? (try-polanski "11|") "1")
+
+         (check-equal? (try-polanski "231?") "3")
+         (check-equal? (try-polanski "230?") "2")
+         (check-equal? (try-polanski "250/34>?") "2")
+         (check-equal? (try-polanski "250/34>!?") "divide by zero")
+         (check-equal? (try-polanski "750/34>?1+") "8")
 
          (check-equal? (try-polanski "23+6x:") "5")
          (check-equal? (try-polanski "x3+6x:")
