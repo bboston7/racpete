@@ -15,8 +15,8 @@
          handle-nick
          handle-part)
 
-(define current-nicks (make-parameter '()))
-(define nick-prefixes (make-parameter "@%+"))
+(define nicks '())
+(define: nick-prefixes : String "@%+")
 
 #|
 Retrieves list of user prefixes from server
@@ -27,7 +27,7 @@ Retrieves list of user prefixes from server
   (if regmatch
     (let ([match (cadr regmatch)])
       (if match
-        (nick-prefixes match)
+        (set! nick-prefixes match)
         '()))
     '()))
 
@@ -38,9 +38,9 @@ Handle a name list response
 (define (handle-names line)
   (define tokens (string-split line ":"))
   (define names (string-split (cadr tokens) " "))
-  (current-nicks
+  (set! nicks
     (map (lambda: ([name : String])
-           (regexp-replace (string-append "^[" (nick-prefixes) "]*")
+           (regexp-replace (string-append "^[" nick-prefixes "]*")
                            name
                            ""))
          names)))
@@ -52,7 +52,7 @@ Handle a user JOIN message
 (define (handle-join line)
   (define tokens (string-split line ":"))
   (define nick (car (string-split (car tokens) "!")))
-  (current-nicks (cons nick (current-nicks))))
+  (set! nicks (cons nick nicks)))
 
 #|
 Handle a user PART or QUIT message
@@ -61,7 +61,7 @@ Handle a user PART or QUIT message
 (define (handle-part line)
   (define tokens (string-split line ":"))
   (define nick (car (string-split (car tokens) "!")))
-  (current-nicks (remove nick (current-nicks))))
+  (set! nicks (remove nick nicks)))
 
 #|
 Handle a user NICK message
@@ -71,5 +71,10 @@ Handle a user NICK message
   (define tokens (string-split line ":"))
   (define oldnick (car (string-split (car tokens) "!")))
   (define newnick (third (string-split (car tokens) " ")))
-  (current-nicks (cons newnick (remove oldnick (current-nicks)))))
+  (set! nicks (cons newnick (remove oldnick nicks))))
+
+#|
+Return nicks as a list
+|#
+(define (current-nicks) nicks)
 

@@ -15,8 +15,8 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 (define TIMEOUT 2000)
 (define MAX-LEN 400)
 
-(define global-env (make-parameter null))
-(define global-static-env (make-parameter null))
+(define global-env null)
+(define global-static-env null)
 
 ;; exp nodes
 (struct num-node (n))
@@ -191,7 +191,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                            (tc e (cons `(,x . ,(arrowt-node-l t))
                                         (cons `(,f . ,t) env))))])
               (and (not (equal? f x)) rt
-                   (global-static-env (cons `(,f . ,t) (global-static-env))) t))]
+                   (set! global-static-env (cons `(,f . ,t) global-static-env)) t))]
            [_ (error "unrecognized case in tc")]
            )))
 
@@ -219,7 +219,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
            [(struct let-rec-node (f x t e))
             (let ([fn (closure e (void) x)])
               (set-closure-env! fn (cons `(,f . ,fn) env))
-              (global-env (cons `(,f . ,fn) (global-env)))
+              (set! global-env (cons `(,f . ,fn) global-env))
               (binding f (res fn)))]
            [(struct minus-num-node (n)) (- (eval* n env))]
            [(struct plus-node (l r)) (+ (eval* l env) (eval* r env))]
@@ -252,12 +252,12 @@ This is derek, an ML-like language that pete recognizes and can evaluate
          [ast (with-handlers
                 ([exn:fail:read? (lambda (exn) #f)])
                 (parse gen))])
-    (if (and ast (tc ast (global-static-env)))
+    (if (and ast (tc ast global-static-env))
       (let* ([eng (engine (lambda (b)
                             (with-handlers
                               ([exn:fail:contract:divide-by-zero?
                                  (lambda (exn) "divide by zero")])
-                              (eval ast (global-env)))))]
+                              (eval ast global-env))))]
              [ans (if (engine-run TIMEOUT eng) (engine-result eng) "timeout")])
         (cond [(string? ans) ans] ;; error message
               [ans (let* ([sans (r->s ans)]

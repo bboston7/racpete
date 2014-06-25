@@ -53,11 +53,7 @@ is urls from the current channel log
         (close-input-port log-file))
       (values null null))))
 
-(define current-quotes (make-parameter null))
-(define current-links (make-parameter null))
-(let-values ([(quotes links) (build-quotes-and-urls)])
-  (current-quotes quotes)
-  (current-links links))
+(define-values (quotes links) (build-quotes-and-urls))
 
 #|
 Log a line from the chat
@@ -65,10 +61,10 @@ Log a line from the chat
 (define (log nick message)
   (let ([line (string-append "<" nick "> " message)])
     (begin
-      (current-quotes (cons line (current-quotes)))
+      (set! quotes (cons line quotes))
       (let ([url-match (regexp-match urlregex line)])
         (when url-match
-          (current-links (cons (car url-match) (current-links)))))
+          (set! links (cons (car url-match) links))))
       (display-to-file (string-append line "\n")
                        (string-append "logs/" CHAN ".log") #:exists 'append))))
 
@@ -77,8 +73,7 @@ Handles incoming user irc commands
 |#
 (define (command-handler nick msg)
   (ping-stimulator)
-  (let ([urlres (regexp-match urlregex msg)]
-        [quotes (current-quotes)])
+  (let ([urlres (regexp-match urlregex msg)])
     (cond
       [(equal? ".test" msg) (write-to-channel "caught .test")]
       [(string-starts-with? msg ".swagtag ") (write-to-channel (swag-tag nick (substring msg 9) (current-nicks) NICK))]
@@ -149,7 +144,7 @@ Handles incoming user irc commands in private messages.
 Handles a link me request
 |#
 (define (handle-link-me)
-  (let ([url (pick-random (current-links))])
+  (let ([url (pick-random links)])
     (when url
       (write-to-channel url)
       (get-website-title-async url write-to-channel))))
@@ -176,7 +171,7 @@ Handles searching youtube
 (start-stimulator
   (list handle-link-me
         (λ () (what-would-say NICK
-                              (current-quotes)
+                              quotes
                               (λ (x) (write-to-channel (chop-token x)))))
-        (λ () (write-to-channel (chop-token (pick-random (current-quotes)))))))
+        (λ () (write-to-channel (chop-token (pick-random quotes))))))
 (start-pete command-handler priv-command-handler)
