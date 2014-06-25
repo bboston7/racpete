@@ -1,16 +1,16 @@
 #lang racket
 
 (provide
-	convert-base
+    convert-base
 )
 
 #|
 Convert (car args-list) from base (cadr args-list) to base (caddr args-list)
 |#
 (define (convert-base args-list)
-  	(with-handlers ([exn:fail? (lambda (v) "No.")])
-      (if (and (member (string->number (caddr args-list)) (range 2 17 1))
-               (member (string->number (cadr args-list)) (range 2 17 1)))
+    (with-handlers ([exn:fail? (lambda (v) "No.")])
+    (if (and (member (string->number (caddr args-list)) (range 2 17 1))
+             (member (string->number (cadr args-list)) (range 2 17 1)))
         (convert-to-string (string->number (car args-list) (string->number (cadr args-list)))
                            (string->number (caddr args-list)))
       "No.")))
@@ -19,13 +19,13 @@ Convert (car args-list) from base (cadr args-list) to base (caddr args-list)
 Converts num to a string with radix to-rad
 |#
 (define (convert-to-string num to-rad)
-	(define (do-thing num to-rad so-far)
-		(if (< num to-rad)
-			(string-append (number->string num 16) so-far)
-			(do-thing (floor (/ num to-rad)) to-rad
-							(string-append (number->string (modulo num to-rad) 16) so-far))))
-	
-	(do-thing num to-rad ""))
+    (define (do-thing num to-rad so-far)
+        (if (< num to-rad)
+            (string-append (number->string num 16) so-far)
+            (do-thing (floor (/ num to-rad)) to-rad
+                            (string-append (number->string (modulo num to-rad) 16) so-far))))
+    
+    (do-thing num to-rad ""))
 
 
 ; Tests
