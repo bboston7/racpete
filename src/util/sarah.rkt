@@ -10,7 +10,7 @@
 
 #|
 
-This is sarah an s-expression based language that pete recognizes and can evaluate
+This is sarah, an s-expression based language that pete recognizes and can evaluate
 
 |#
 
@@ -20,9 +20,9 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 ;; exp nodes
 (struct s-node (e as))
 (struct var-node (v))
-(struct let-node (vs e))
+(struct let-node (t vs e))
 (struct let-arg-node (v e))
-(struct lambda-node (a e))
+(struct lambda-node (as e))
 (struct if-node (p t f))
 (struct builtin-node (s as))
 (struct num-node (n))
@@ -30,11 +30,12 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (struct literal-node (l))
 (struct exp-node (e))
 
-(struct closure (e env a))
+;; need mutability to implement let rec
+(struct closure (e env as) #:mutable)
 
-(define-tokens ts (NUM VAR BUILTIN))
-(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LET LAMBDA IF
-                          TRUE FALSE EOF FAIL))
+(define-tokens ts (NUM VAR BUILTIN LET))
+(define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LAMBDA THUNK
+                          IF TRUE FALSE EOF FAIL))
 
 (define-lex-abbrev identic
   (:or alphabetic
@@ -47,8 +48,12 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          [")" (token-RPAREN)]
          ["[" (token-LPAREN!)]
          ["]" (token-RPAREN!)]
-         ["let" (token-LET)]
+         ["let" (token-LET 'let)]
+         ["let*" (token-LET 'let*)]
+         ["letrec" (token-LET 'letrec)]
+         ["letrec*" (token-LET 'letrec*)]
          ["lambda" (token-LAMBDA)]
+         ["thunk" (token-THUNK)]
          ["if" (token-IF)]
          ["+" (token-BUILTIN lexeme)]
          ["-" (token-BUILTIN lexeme)]
@@ -90,13 +95,18 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 (define parse
   (parser
     (grammar (E
-               ((LPAREN LET LPAREN LETARGS RPAREN E RPAREN) (let-node $4 $6))
-               ((LPAREN LAMBDA LPAREN VAR RPAREN E RPAREN) (lambda-node $4 $6))
+               ((LPAREN LET LPAREN LETARGS RPAREN E RPAREN) (let-node $2 $4 $6))
+               ((LPAREN LAMBDA LPAREN VARS RPAREN E RPAREN) (lambda-node $4 $6))
+               ((LPAREN THUNK E RPAREN) (lambda-node '() $3))
                ((LPAREN IF E E E RPAREN) (if-node $3 $4 $5))
                ((LPAREN BUILTIN ARGS RPAREN) (builtin-node $2 $3))
                ((LPAREN E ARGS RPAREN) (s-node $2 $3))
                ((LITERAL) (literal-node $1))
                ((VAR) (var-node $1))
+               )
+             (VARS
+               (() null)
+               ((VAR VARS) (cons $1 $2))
                )
              (ARGS
                (() null)
@@ -195,10 +205,10 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          [(equal? #\: c) (vpop v stack
                          (pop e stack
                          (pop b stack
-                              (cons (let-node (list (let-arg-node v e)) b) stack))))]
+                              (cons (let-node 'let (list (let-arg-node v e)) b) stack))))]
          [(equal? #\\ c) (vpop a stack
                          (pop b stack
-                              (cons (lambda-node a b) stack)))]
+                              (cons (lambda-node (list a) b) stack)))]
          [(equal? #\$ c) (pop l stack
                          (pop v stack
                               (cons (s-node l (list v)) stack)))]
@@ -259,32 +269,57 @@ This is sarah an s-expression based language that pete recognizes and can evalua
            ))
   (define (eval-s s args env)
     (match s
-           [(struct closure (e env a))
-            (let ([l (length args)])
-              (if (not (equal? l 1))
-                (raise-arity-error (string->symbol a) l)
-              (eval* e (cons `(,a . ,(car args)) env))))]
+           [(struct closure (e env as))
+            (let ([argslen (length args)]
+                  [aslen (length as)])
+              (if (not (equal? argslen aslen))
+                (apply raise-arity-error 'lambda aslen args)
+              (eval* e (append (map cons as args) env))))]
            [_ (error "unrecognized s-functor")]
            ))
   (define (add-env vs env)
     (match vs
-           ['() env]
-           [(cons (struct let-arg-node (v e)) rst)
-            (cons `(,v . ,(eval* e env)) (add-env rst env))]
-           ))
+      ['() env]
+      [(cons (struct let-arg-node (v e)) rst)
+       (cons `(,v . ,(eval* e env)) (add-env rst env))]
+      ))
+  (define (add-env* vs env)
+    (match vs
+      ['() env]
+      [(cons (struct let-arg-node (v e)) rst)
+       (let ([a `(,v . ,(eval* e env))])
+         (add-env* rst (cons a env)))]
+      ))
+  (define (add-env-rec add-env vs env)
+    (let ([env* (add-env vs env)])
+      (map (lambda (x)
+             (match x
+               [(cons v (struct closure (e env as)))
+                (begin
+                  (set-closure-env! (cdr x) env*)
+                  x)]
+               [_ x]))
+           env*)))
+  (define (add-env-case t vs env)
+    (match t
+      ['let (add-env vs env)]
+      ['let* (add-env* vs env)]
+      ['letrec (add-env-rec add-env vs env)]
+      ['letrec* (add-env-rec add-env* vs env)]
+      ))
   (define (eval* e env)
     (match e
            [(struct num-node (n)) n]
            [(struct bool-node (b)) b]
            [(struct literal-node (l)) (eval* l env)]
            [(struct var-node (v)) (cdr (assoc v env))]
-           [(struct lambda-node (a e)) (closure e env a)]
+           [(struct lambda-node (as e)) (closure e env as)]
            [(struct builtin-node (s as)) (eval-b s (map (lambda (a) (eval* a env)) as))]
            [(struct s-node (e as)) (eval-s (eval* e env)
                                            (map (lambda (a) (eval* a env)) as)
                                            env)]
            [(struct exp-node (e)) (eval* e env)]
-           [(struct let-node (vs e)) (eval* e (add-env vs env))]
+           [(struct let-node (t vs e)) (eval* e (add-env-case t vs env))]
            [(struct if-node (p t f)) (if (eval* p env)
                                        (eval* t env)
                                        (eval* f env))]
@@ -318,7 +353,7 @@ This is sarah an s-expression based language that pete recognizes and can evalua
 ;; parses sarah and attempts to run it
 (define (try-sarah s)
   (let* ([in (open-input-string s)]
-         [gen (lambda () (scanner in))]
+         [gen (thunk (scanner in))]
          [ast (with-handlers
                 ([exn:fail:read? (lambda (exn) #f)])
                 (parse gen))])
@@ -411,12 +446,59 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah "(let ([x 5] [y 6]) (* x y))")
                        (number->string (let ([x 5] [y 6]) (* x y))))
 
+         (check-equal? (try-sarah "(let ([x 2] [y x]) y)") #f)
+         (check-equal? (try-sarah "(let* ([x 2] [y x]) y)") "2")
+         (check-equal? (try-sarah "(letrec ([x 2] [y x]) y)") #f)
+         (check-equal? (try-sarah "(letrec* ([x 2] [y x]) y)") "2")
+         (check-equal? (try-sarah "(let ([x y] [y 2]) x)") #f)
+         (check-equal? (try-sarah "(let* ([x y] [y 2]) x)") #f)
+         (check-equal? (try-sarah "(letrec ([x y] [y 2]) x)") #f)
+         (check-equal? (try-sarah "(letrec* ([x y] [y 2]) x)") #f)
+
+         (check-equal? (try-sarah "(let ([x 2] [y (thunk x)]) (y))") #f)
+         (check-equal? (try-sarah "(let* ([x 2] [y (thunk x)]) (y))") "2")
+         (check-equal? (try-sarah "(letrec ([x 2] [y (thunk x)]) (y))") "2")
+         (check-equal? (try-sarah "(letrec* ([x 2] [y (thunk x)]) (y))") "2")
+         (check-equal? (try-sarah "(let ([x (thunk y)] [y 2]) (x))") #f)
+         (check-equal? (try-sarah "(let* ([x (thunk y)] [y 2]) (x))") #f)
+         (check-equal? (try-sarah "(letrec ([x (thunk y)] [y 2]) (x))") "2")
+         (check-equal? (try-sarah "(letrec* ([x (thunk y)] [y 2]) (x))") "2")
+
+         (check-equal? (try-sarah "(let ([z 5]) (let ([z 1] [y z]) y))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (let* ([z 1] [y z]) y))") "1")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec ([z 1] [y z]) y))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec* ([z 1] [y z]) y))") "1")
+         (check-equal? (try-sarah "(let ([z 5]) (let ([y z] [z 1]) y))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (let* ([y z] [z 1]) y))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec ([y z] [z 1]) y))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec* ([y z] [z 1]) y))") "5")
+
+         (check-equal? (try-sarah "(let ([z 5]) (let ([z 1] [y (thunk z)]) (y)))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (let* ([z 1] [y (thunk z)]) (y)))") "1")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec ([z 1] [y (thunk z)]) (y)))") "1")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec* ([z 1] [y (thunk z)]) (y)))") "1")
+         (check-equal? (try-sarah "(let ([z 5]) (let ([y (thunk z)] [z 1]) (y)))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (let* ([y (thunk z)] [z 1]) (y)))") "5")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec ([y (thunk z)] [z 1]) (y)))") "1")
+         (check-equal? (try-sarah "(let ([z 5]) (letrec* ([y (thunk z)] [z 1]) (y)))") "1")
+
+         (check-equal? (try-sarah "((lambda () 4))") "4")
+         (check-equal? (try-sarah "((thunk 4))") "4")
+         (check-equal? (try-sarah "((thunk 4) 5)") "arity mismatch")
+         (check-equal? (try-sarah "(lambda (x) (+ x y))") "<lambda>")
          (check-equal? (try-sarah
                          "((lambda (x) (+ x 1)) 3)")
                        (number->string
                          ((lambda (x) (+ x 1)) 3)))
          (check-equal? (try-sarah
+                         "((lambda (x y) (+ x y)) 3 5)")
+                       (number->string
+                         ((lambda (x y) (+ x y)) 3 5)))
+         (check-equal? (try-sarah
                          "((lambda (x) (+ x 1)) 3 5)")
+                       "arity mismatch")
+         (check-equal? (try-sarah
+                         "((lambda (x y) (+ x y)) 3)")
                        "arity mismatch")
          (check-equal? (try-sarah "((lambda (x) 4))") "arity mismatch")
 
@@ -434,6 +516,10 @@ This is sarah an s-expression based language that pete recognizes and can evalua
          (check-equal? (try-sarah
                          "(let ([x (lambda (x) (lambda (y) (+ x y)))]) (x 3 5))")
                        "arity mismatch")
+         (check-equal? (try-sarah
+                         "(let ([x 3]) ((lambda (y) (+ x y)) 5))")
+                       (number->string
+                         (let ([x 3]) ((lambda (y) (+ x y)) 5))))
 
 
          (check-equal? (try-polanski "2") "2")
@@ -502,6 +588,7 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                        (number->string (let ([x 5] [y 6]) (* x y))))
 
          (check-equal? (try-polanski "3x1+x\\") "<lambda>")
+         (check-equal? (try-polanski "xy+x\\") "<lambda>")
          (check-equal? (try-polanski "3x1+x\\$")
                        (number->string
                          ((lambda (x) (+ x 1)) 3)))
@@ -513,5 +600,8 @@ This is sarah an s-expression based language that pete recognizes and can evalua
                          (let ([x (lambda (x) (lambda (y) (+ x y)))]) ((x 3) 5))))
          (check-equal? (try-polanski "3x$xy+y\\x\\x:")
                        "<lambda>")
+         (check-equal? (try-polanski "3xy+y\\$5x:")
+                       (number->string
+                         (let ([x 5]) ((lambda (y) (+ x y)) 3))))
 )
 
