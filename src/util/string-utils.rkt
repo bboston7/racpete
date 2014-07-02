@@ -6,6 +6,7 @@
 (provide strip-tags
          chop-token
          string-contains?
+         string-ends-with?
          string-starts-with?)
 
 #|
@@ -30,6 +31,15 @@ Returns a true value if token is in str
 (define (string-contains? str token)
   (regexp-match?
     (regexp (regexp-quote (string-downcase token)))
+    (string-downcase str)))
+
+#|
+Returns #t if str ends with token
+|#
+(: string-ends-with? (String String -> Boolean))
+(define (string-ends-with? str token)
+  (regexp-match?
+    (regexp (string-append (regexp-quote (string-downcase token)) "$"))
     (string-downcase str)))
 
 #|

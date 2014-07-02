@@ -6,6 +6,7 @@
   "commands/ballsohard.rkt"
   "commands/convert-base.rkt"
   "commands/games.rkt"
+  "commands/karma.rkt"
   "commands/kwanzaa.rkt"
   "commands/learn-about.rkt"
   "commands/stimulate.rkt"
@@ -112,6 +113,16 @@ Handles incoming user irc commands
       [(try-eval msg) => write-to-channel]
       [(try-sarah msg) => write-to-channel]
       [(string-starts-with? msg ".rp ") (write-polanski (substring msg 4) write-to-channel)]
+      ; Karma commands
+      [(string-starts-with? msg "++") (modify-karma (substring msg 2) 'incr)]
+      [(string-ends-with? msg "++") (modify-karma
+                                      (substring msg 0 (- (string-length msg) 2))
+                                      'incr)]
+      [(string-starts-with? msg "--") (modify-karma (substring msg 2) 'decr)]
+      [(string-ends-with? msg "--") (modify-karma
+                                      (substring msg 0 (- (string-length msg) 2))
+                                      'decr)]
+      [(string-starts-with? msg ".karma ") (write-to-channel (get-karma (substring msg 7)))]
       [else (log nick msg)])))
 
 #|
