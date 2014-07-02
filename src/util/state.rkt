@@ -20,8 +20,7 @@ Utility for managing state.
 
 (define (make-state state key val)
   (hash-ref state key (lambda ()
-                        (hash-set! state key val)
-                        (save-state state)))
+                        (hash-set! state key val)))
   (lambda ([newval (blank)])
     (if (blank? newval)
       (hash-ref state key (lambda () val))
