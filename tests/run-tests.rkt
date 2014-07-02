@@ -2,7 +2,8 @@
 #lang racket
 
 (require rackunit/text-ui
-         "test-string-utils.rkt")
+         "test-string-utils.rkt"
+         "test-convert-base.rkt")
 
 #|
 This list of test suites to run.  Please keep this alphabetical so I don't
@@ -12,7 +13,8 @@ TODO: Can we populate this list automatically?
 |#
 (define suites (list
                  test-string-contains?
-                 test-string-starts-with?))
+                 test-string-starts-with?
+                 test-convert-base))
 
 (define (all-pass? suite)
   (= 0 (run-tests suite)))
