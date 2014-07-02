@@ -20,11 +20,8 @@
          write-to-thing
          write-to-user)
 
-#|
-Sets input to the input stream from the server and output to the output stream
-from our computer
-|#
-(define-values (input output) (tcp-connect HOST PORT))
+(define input (current-input-port))
+(define output (current-output-port))
 
 #|
 Identifies with the IRC Server
@@ -195,6 +192,16 @@ Parameters
   (flush-output output))
 
 #|
+Sets input to the input stream from the server and output to the output stream
+from our computer
+|#
+(: connect (-> Any))
+(define (connect)
+  (set!-values (input output) (tcp-connect HOST PORT))
+  (identify)
+  (join))
+
+#|
 Reconnect to the server
 |#
 (: reconnect (-> Any))
@@ -204,9 +211,7 @@ Reconnect to the server
   (printf "disconnected, reconnecting in ~a seconds\n" RECONNECT_TIMER)
   (sleep RECONNECT_TIMER)
   (displayln "reconnecting...")
-  (set!-values (input output) (tcp-connect HOST PORT))
-  (identify)
-  (join))
+  (connect))
 
 #|
 |#
@@ -221,6 +226,5 @@ Parameters
 |#
 (: start-pete ((String String -> Any) (String String -> Any) -> Any))
 (define (start-pete chan-callback priv-callback)
-  (identify)
-  (join)
+  (connect)
   (read-in chan-callback priv-callback))

@@ -181,10 +181,12 @@ Handles searching youtube
 (define (handle-youtube-search msg)
   (thread (lambda () (query-youtube (substring msg 4) write-to-channel))))
 
-(start-stimulator
-  (list handle-link-me
-        (λ () (what-would-say NICK
-                              quotes
-                              (λ (x) (write-to-channel (chop-token x)))))
-        (λ () (write-to-channel (chop-token (pick-random quotes))))))
-(start-pete command-handler priv-command-handler)
+(module* main #f
+  (start-stimulator
+    (list handle-link-me
+          (λ () (what-would-say NICK
+                                quotes
+                                (λ (x) (write-to-channel (chop-token x)))))
+          (λ () (write-to-channel (chop-token (pick-random quotes))))))
+  (start-pete command-handler priv-command-handler))
+
