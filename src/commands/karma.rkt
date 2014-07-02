@@ -3,6 +3,7 @@
 (require "../config.rkt")
 
 (provide get-karma
+         leaderboard
          modify-karma)
 
 (define FILE_NAME (format "logs/~a.karma" CHAN))
@@ -47,3 +48,29 @@ Returns the karma associated with item
     (format "~a has ~a karma point(s)"
       item
       (hash-ref karma (string->key item) key-not-found))))
+
+#|
+Prints the leaderboard out, calling out-fn
+|#
+(define (leaderboard out-fn)
+  (if (>= (hash-count karma) 3)
+    (let* ([assoc-list (hash->list karma)]
+           [sorted (sort assoc-list (λ (x y) (< (cdr x) (cdr y))))]
+           [best (take-right sorted 3)])
+      (out-fn (format
+                "Top 3: ~a (~a), ~a (~a), ~a (~a)"
+                (caaddr best)
+                (cdaddr best)
+                (caadr best)
+                (cdadr best)
+                (caar best)
+                (cdar best)))
+      (out-fn (format
+                "Bottom 3: ~a (~a), ~a (~a), ~a (~a)"
+                (caar sorted)
+                (cdar sorted)
+                (caadr sorted)
+                (cdadr sorted)
+                (caaddr sorted)
+                (cdaddr sorted))))
+    (out-fn "not enough items for a leaderboard")))

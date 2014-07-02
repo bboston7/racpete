@@ -114,6 +114,8 @@ Handles incoming user irc commands
       [(try-sarah msg) => write-to-channel]
       [(string-starts-with? msg ".rp ") (write-polanski (substring msg 4) write-to-channel)]
       ; Karma commands
+      [(string-starts-with? msg ".karma ") (write-to-channel (get-karma (substring msg 7)))]
+      [(equal? msg ".karma") (leaderboard write-to-channel)]
       [(string-starts-with? msg "++") (modify-karma (substring msg 2) 'incr)]
       [(string-ends-with? msg "++") (modify-karma
                                       (substring msg 0 (- (string-length msg) 2))
@@ -122,7 +124,6 @@ Handles incoming user irc commands
       [(string-ends-with? msg "--") (modify-karma
                                       (substring msg 0 (- (string-length msg) 2))
                                       'decr)]
-      [(string-starts-with? msg ".karma ") (write-to-channel (get-karma (substring msg 7)))]
       [else (log nick msg)])))
 
 #|
