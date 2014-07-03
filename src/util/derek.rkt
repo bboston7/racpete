@@ -3,6 +3,8 @@
 (require parser-tools/lex)
 (require parser-tools/yacc)
 (require racket/engine)
+(require racket/serialize)
+(require "state.rkt")
 
 (provide try-eval)
 
@@ -15,38 +17,38 @@ This is derek, an ML-like language that pete recognizes and can evaluate
 (define TIMEOUT 2000)
 (define MAX-LEN 400)
 
-(define global-env null)
-(define global-static-env null)
+(define-state global-env null)
+(define-state global-static-env null)
 
 ;; exp nodes
-(struct num-node (n))
-(struct minus-num-node (n))
-(struct plus-node (l r))
-(struct minus-node (l r))
-(struct times-node (l r))
-(struct divide-node (l r))
-(struct mod-node (l r))
-(struct power-node (l r))
-(struct paren-node (e))
-(struct if-node (t e1 e2))
-(struct bool-node (b))
-(struct lt-node (l r))
-(struct let-in-node (i e1 e2))
-(struct let-rec-in-node (f x t e1 e2))
-(struct let-rec-node (f x t e))
-(struct var-node (i))
-(struct lambda-node (x t e))
-(struct app-node (e1 e2))
-(struct exp-node (e))
+(sstruct num-node (n))
+(sstruct minus-num-node (n))
+(sstruct plus-node (l r))
+(sstruct minus-node (l r))
+(sstruct times-node (l r))
+(sstruct divide-node (l r))
+(sstruct mod-node (l r))
+(sstruct power-node (l r))
+(sstruct paren-node (e))
+(sstruct if-node (t e1 e2))
+(sstruct bool-node (b))
+(sstruct lt-node (l r))
+(sstruct let-in-node (i e1 e2))
+(sstruct let-rec-in-node (f x t e1 e2))
+(sstruct let-rec-node (f x t e))
+(sstruct var-node (i))
+(sstruct lambda-node (x t e))
+(sstruct app-node (e1 e2))
+(sstruct exp-node (e))
 
 ;; type nodes, need transparency for equal? to work
-(struct numt-node () #:transparent)
-(struct boolt-node () #:transparent)
-(struct arrowt-node (l r) #:transparent)
+(sstruct numt-node () #:transparent)
+(sstruct boolt-node () #:transparent)
+(sstruct arrowt-node (l r) #:transparent)
 
 ;; need mutability to implement let rec
-(struct closure (e env arg) #:mutable)
-(struct binding (i v))
+(sstruct closure (e env arg) #:mutable)
+(sstruct binding (i v))
 
 (define-tokens ts (NUM BOOL VAR))
 (define-empty-tokens ets (+ - * / % ^ < = : LPAREN RPAREN IF THEN ELSE LET IN
@@ -191,7 +193,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
                            (tc e (cons `(,x . ,(arrowt-node-l t))
                                         (cons `(,f . ,t) env))))])
               (and (not (equal? f x)) rt
-                   (set! global-static-env (cons `(,f . ,t) global-static-env)) t))]
+                   (global-static-env (cons `(,f . ,t) (global-static-env))) t))]
            [_ (error "unrecognized case in tc")]
            )))
 
@@ -219,7 +221,7 @@ This is derek, an ML-like language that pete recognizes and can evaluate
            [(struct let-rec-node (f x t e))
             (let ([fn (closure e (void) x)])
               (set-closure-env! fn (cons `(,f . ,fn) env))
-              (set! global-env (cons `(,f . ,fn) global-env))
+              (global-env (cons `(,f . ,fn) (global-env)))
               (binding f (res fn)))]
            [(struct minus-num-node (n)) (- (eval* n env))]
            [(struct plus-node (l r)) (+ (eval* l env) (eval* r env))]
@@ -252,12 +254,12 @@ This is derek, an ML-like language that pete recognizes and can evaluate
          [ast (with-handlers
                 ([exn:fail:read? (lambda (exn) #f)])
                 (parse gen))])
-    (if (and ast (tc ast global-static-env))
+    (if (and ast (tc ast (global-static-env)))
       (let* ([eng (engine (lambda (b)
                             (with-handlers
                               ([exn:fail:contract:divide-by-zero?
                                  (lambda (exn) "divide by zero")])
-                              (eval ast global-env))))]
+                              (eval ast (global-env)))))]
              [ans (if (engine-run TIMEOUT eng) (engine-result eng) "timeout")])
         (cond [(string? ans) ans] ;; error message
               [ans (let* ([sans (r->s ans)]
