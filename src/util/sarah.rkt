@@ -55,21 +55,12 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
          ["lambda" (token-LAMBDA)]
          ["thunk" (token-THUNK)]
          ["if" (token-IF)]
-         ["+" (token-BUILTIN lexeme)]
-         ["-" (token-BUILTIN lexeme)]
-         ["*" (token-BUILTIN lexeme)]
-         ["/" (token-BUILTIN lexeme)]
-         ["%" (token-BUILTIN lexeme)]
-         ["^" (token-BUILTIN lexeme)]
-         ["<" (token-BUILTIN lexeme)]
-         ["<=" (token-BUILTIN lexeme)]
-         ["=" (token-BUILTIN lexeme)]
-         ["!=" (token-BUILTIN lexeme)]
-         [">=" (token-BUILTIN lexeme)]
-         [">" (token-BUILTIN lexeme)]
-         ["!" (token-BUILTIN lexeme)]
-         ["&" (token-BUILTIN lexeme)]
-         ["|" (token-BUILTIN lexeme)]
+         [(:or
+            "+" "-" "*" "/" "%" "^"
+            "<" "<=" "=" "!=" ">=" ">" "!" "&" "|"
+            "cons" "car" "cdr"
+            )
+          (token-BUILTIN lexeme)]
          ["#t" (token-TRUE)]
          ["#f" (token-FALSE)]
          [(::
@@ -231,11 +222,15 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
 
 ;; res struct to string
 (define (r->s r)
-  (let ([v (res-r r)])
-    (cond [(number? v) (number->string v)]
-          [(boolean? v) (if v "#t" "#f")]
-          [(closure? v) "<lambda>"]
-          [else (error "unrecognized type")])))
+  (letrec ([v (res-r r)]
+           [->s (lambda (v)
+                  (cond [(number? v) (number->string v)]
+                        [(boolean? v) (if v "#t" "#f")]
+                        [(closure? v) "<lambda>"]
+                        [(cons? v) (string-append
+                                     "(" (->s (car v)) " . " (->s (cdr v)) ")")]
+                        [else (error "unrecognized type")]))])
+    (->s v)))
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
 ;; program.  If the input expression is well-formed, this will never "get stuck"
@@ -265,6 +260,9 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
            ["!" (apply not args)]
            ["&" (and- args)]
            ["|" (or- args)]
+           ["cons" (apply cons args)]
+           ["car" (apply car args)]
+           ["cdr" (apply cdr args)]
            [_ (error "unrecognized b-functor")]
            ))
   (define (eval-s s args env)
@@ -520,6 +518,26 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
                          "(let ([x 3]) ((lambda (y) (+ x y)) 5))")
                        (number->string
                          (let ([x 3]) ((lambda (y) (+ x y)) 5))))
+
+         (check-equal? (try-sarah "(cons 2)") "arity mismatch")
+         (check-equal? (try-sarah "(car 5)") #f)
+
+         (check-equal? (try-sarah "(cons 3 4)") "(3 . 4)")
+         (check-equal? (try-sarah "(car (cons 3 4))") "3")
+         (check-equal? (try-sarah "(cdr (cons 3 4))") "4")
+         (check-equal? (try-sarah "(cons (cons 5 (thunk 2)) (cons #t 1))")
+                       "((5 . <lambda>) . (#t . 1))")
+
+         (check-equal? (try-sarah
+                         "(letrec ([succ (lambda (n)
+                                           (thunk
+                                             (cons n (succ (+ n 1)))))])
+                            (car ((cdr ((cdr ((cdr ((succ 0))))))))))")
+                       (number->string
+                         (letrec ([succ (lambda (n)
+                                          (thunk
+                                            (cons n (succ (+ n 1)))))])
+                           (car ((cdr ((cdr ((cdr ((succ 0))))))))))))
 
 
          (check-equal? (try-polanski "2") "2")
