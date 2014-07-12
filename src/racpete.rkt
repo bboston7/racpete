@@ -112,7 +112,7 @@ Handles incoming user irc commands
       [(string-starts-with? msg ".g ") (handle-google-search msg)]
       [(try-eval msg) => write-to-channel]
       [(try-sarah msg) => write-to-channel]
-      [(string-starts-with? msg ".rp ") (write-polanski (substring msg 4) write-to-channel)]
+      [(string-starts-with? msg ".sp ") (write-sp (substring msg 4) write-to-channel)]
       ; Karma commands
       [(string-starts-with? msg ".karma ") (write-to-channel (get-karma (substring msg 7)))]
       [(equal? msg ".karma") (leaderboard write-to-channel)]
