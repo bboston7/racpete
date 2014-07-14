@@ -27,15 +27,15 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
 (struct builtin-node (s as))
 (struct num-node (n))
 (struct bool-node (b))
-(struct literal-node (l))
 (struct exp-node (e))
+(struct nil-node ())
 
 ;; need mutability to implement let rec
 (struct closure (e env as) #:mutable)
 
 (define-tokens ts (NUM VAR BUILTIN LET))
 (define-empty-tokens ets (LPAREN RPAREN LPAREN! RPAREN! LAMBDA THUNK
-                          IF TRUE FALSE EOF FAIL))
+                          IF TRUE FALSE NIL EOF FAIL))
 
 (define-lex-abbrev identic
   (:or alphabetic
@@ -58,11 +58,12 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
          [(:or
             "+" "-" "*" "/" "%" "^"
             "<" "<=" "=" "!=" ">=" ">" "!" "&" "|"
-            "cons" "car" "cdr"
+            "cons" "car" "cdr" "list"
             )
           (token-BUILTIN lexeme)]
          ["#t" (token-TRUE)]
          ["#f" (token-FALSE)]
+         ["nil" (token-NIL)]
          [(::
             (:- identic numeric)
             (:* identic)) (token-VAR lexeme)]
@@ -92,7 +93,7 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
                ((LPAREN IF E E E RPAREN) (if-node $3 $4 $5))
                ((LPAREN BUILTIN ARGS RPAREN) (builtin-node $2 $3))
                ((LPAREN E ARGS RPAREN) (s-node $2 $3))
-               ((LITERAL) (literal-node $1))
+               ((LITERAL) $1)
                ((VAR) (var-node $1))
                )
              (VARS
@@ -114,6 +115,7 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
                ((NUM) (num-node (string->number $1)))
                ((TRUE) (bool-node #t))
                ((FALSE) (bool-node #f))
+               ((NIL) (nil-node))
                )
              )
     (tokens ts ets)
@@ -204,9 +206,9 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
          [(equal? #\\ c) (vpop a stack
                          (pop b stack
                               (cons (lambda-node (list a) b) stack)))]
-         [(equal? #\$ c) (pop l stack
-                         (pop v stack
-                              (cons (s-node l (list v)) stack)))]
+         [(equal? #\$ c) (pop f stack
+                         (pop x stack
+                              (cons (s-node f (list x)) stack)))]
          [(equal? #\. c) (op "cons" stack)]
          [(equal? #\[ c) (pop c stack
                               (cons (builtin-node "car" (list c)) stack))]
@@ -231,15 +233,30 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
 
 ;; res struct to string
 (define (r->s r)
+  (define (paren s)
+    (string-append "(" s ")"))
   (letrec ([v (res-r r)]
+           [cons?->s (lambda (v)
+                       (let ([s (->s v)])
+                         (if (cons? v)
+                           (paren (->s v))
+                           (->s v))))]
            [->s (lambda (v)
                   (cond [(number? v) (number->string v)]
                         [(boolean? v) (if v "#t" "#f")]
+                        [(null? v) "()"]
                         [(closure? v) "<lambda>"]
-                        [(cons? v) (string-append
-                                     "(" (->s (car v)) " . " (->s (cdr v)) ")")]
+                        [(cons? v)
+                         (string-append
+                           (cons?->s (car v))
+                           (let ([s (->s (cdr v))])
+                             (match (cdr v)
+                               [(cons _ _)
+                                (string-append " " s)]
+                               ['() ""]
+                               [_ (string-append " . " s)])))]
                         [else (error "unrecognized type")]))])
-    (->s v)))
+    (cons?->s v)))
 
 ;; Interpreter: returns a res struct containing the result of evaluating the
 ;; program.  If the input expression is well-formed, this will never "get stuck"
@@ -252,6 +269,11 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
     (if (null? preds)
       #f
       (or (car preds) (or- (cdr preds)))))
+  (define (=- preds)
+    (cond
+      [(and- (map null? preds)) #t]
+      [(and- (map number? preds)) (apply = preds)]
+      [else #f]))
   (define (eval-b s args)
     (match s
            ["+" (apply + args)]
@@ -262,8 +284,8 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
            ["^" (apply expt args)]
            ["<" (apply < args)]
            ["<=" (apply <= args)]
-           ["=" (apply = args)]
-           ["!=" (apply (compose not =) args)]
+           ["=" (=- args)]
+           ["!=" (not (=- args))]
            [">=" (apply >= args)]
            [">" (apply > args)]
            ["!" (apply not args)]
@@ -272,6 +294,7 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
            ["cons" (apply cons args)]
            ["car" (apply car args)]
            ["cdr" (apply cdr args)]
+           ["list" args]
            [_ (error "unrecognized b-functor")]
            ))
   (define (eval-s s args env)
@@ -318,7 +341,7 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
     (match e
            [(struct num-node (n)) n]
            [(struct bool-node (b)) b]
-           [(struct literal-node (l)) (eval* l env)]
+           [(struct nil-node ()) '()]
            [(struct var-node (v)) (cdr (assoc v env))]
            [(struct lambda-node (as e)) (closure e env as)]
            [(struct builtin-node (s as)) (eval-b s (map (lambda (a) (eval* a env)) as))]
@@ -531,11 +554,46 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
          (check-equal? (try-sarah "(cons 2)") "arity mismatch")
          (check-equal? (try-sarah "(car 5)") #f)
 
+         (check-equal? (try-sarah "(= (cons 1 2) 2)") "#f")
+         (check-equal? (try-sarah "(= (cons 1 2) 1)") "#f")
+         (check-equal? (try-sarah "(= (cons 1 2) (cons 1 2))") "#f")
+         (check-equal? (try-sarah "(= 4 2 (cons #f 1) 1)") "#f")
+         (check-equal? (try-sarah "(!= (cons 1 2) 2)") "#t")
+         (check-equal? (try-sarah "(!= (cons 1 2) 1)") "#t")
+         (check-equal? (try-sarah "(!= (cons 1 2) (cons 1 2))") "#t")
+         (check-equal? (try-sarah "(!= 4 2 (cons #t 1) 1)") "#t")
+
          (check-equal? (try-sarah "(cons 3 4)") "(3 . 4)")
          (check-equal? (try-sarah "(car (cons 3 4))") "3")
          (check-equal? (try-sarah "(cdr (cons 3 4))") "4")
+         (check-equal? (try-sarah "(cons 4 (cons 3 (cons 2 (cons 1 #f))))")
+                       "(4 3 2 1 . #f)")
+         (check-equal? (try-sarah "(cons 4 (cons (cons 3 6) (cons 2 (cons 1 #f))))")
+                       "(4 (3 . 6) 2 1 . #f)")
          (check-equal? (try-sarah "(cons (cons 5 (thunk 2)) (cons #t 1))")
-                       "((5 . <lambda>) . (#t . 1))")
+                       "((5 . <lambda>) #t . 1)")
+
+         (check-equal? (try-sarah "(+ 2 nil)") #f)
+         (check-equal? (try-sarah "(nil)") #f)
+         (check-equal? (try-sarah "(cons 4 nil)") "(4)")
+         (check-equal? (try-sarah "(cons 2 (cons 4 nil))") "(2 4)")
+         (check-equal? (try-sarah "(cons nil (cons 4 nil))") "(() 4)")
+         (check-equal? (try-sarah "(= nil 2)") "#f")
+         (check-equal? (try-sarah "(= nil nil)") "#t")
+
+         (check-equal? (try-sarah "(letrec
+                                     ([map (lambda (fn xs)
+                                             (if (= xs nil)
+                                               nil
+                                               (cons (fn (car xs))
+                                                     (map fn (cdr xs)))))])
+                                     (map (lambda (x) (+ x 1)) (list 1 2 3 4)))")
+                       "(2 3 4 5)")
+
+         (check-equal? (try-sarah "(list 4 3 2 1)") "(4 3 2 1)")
+         (check-equal? (try-sarah "(car (list 4 3 2 1))") "4")
+         (check-equal? (try-sarah "(cdr (list 4 3 2 1))") "(3 2 1)")
+         (check-equal? (try-sarah "(cdr (list 2))") "()")
 
          (check-equal? (try-sarah
                          "(letrec ([succ (lambda (n)
@@ -642,11 +700,22 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
          (check-equal? (try-sp "2.") #f)
          (check-equal? (try-sp "5[") #f)
 
+         (check-equal? (try-sp "12.2=") "0")
+         (check-equal? (try-sp "12.1=") "0")
+         (check-equal? (try-sp "12.12.=") "0")
+
          (check-equal? (try-sp "34.") "(3 . 4)")
          (check-equal? (try-sp "34.[") "3")
          (check-equal? (try-sp "34.]") "4")
+         (check-equal? (try-sp "43210....")
+                       "(4 3 2 1 . 0)")
+         (check-equal? (try-sp "436.210....")
+                       "(4 (3 . 6) 2 1 . 0)")
          (check-equal? (try-sp "52x\\.11..")
-                       "((5 . <lambda>) . (1 . 1))")
+                       "((5 . <lambda>) 1 . 1)")
+
+         (check-equal? (try-sp "12340....1x2*+x\\m$$x[f$x]fm$$.0x0=?x\\f\\m#")
+                       "(3 5 7 9 . 0)")
 
          ; 0,$ is 0-swap-call, which we use to call a "thunk"
          (check-equal? (try-sp "0s$0,$]0,$]0,$]0,$[nn1+s$.x\\n\\s#")
