@@ -3,7 +3,6 @@
 (require parser-tools/lex)
 (require parser-tools/yacc)
 (require racket/engine)
-(require racket/serialize)
 (require "state.rkt")
 
 (provide try-eval)

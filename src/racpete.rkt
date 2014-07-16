@@ -94,9 +94,9 @@ Handles incoming user irc commands
       [(equal? ".ycombinator" msg) (ycombo write-to-channel)]
       [(string-starts-with? msg ".morse ") (write-to-channel
                                             (string->morse (substring msg 6)))]
-      [(contains-morse? msg) (begin
-                               (write-to-channel (convert-morse (parse-morse msg)))
-                               (log nick msg))]
+      [(contains-morse? msg) => (lambda (x)
+                                  (write-to-channel x)
+                                  (log nick msg))]
       [urlres (handle-url-match urlres nick msg)]
       [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]

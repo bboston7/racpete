@@ -23,7 +23,12 @@ Get longest matching morse string from a line.
          ""
          (regexp-match* get-morse-pattern line)))
 
-(define (contains-morse? line) (regexp-match contains-morse-pattern line))
+(define (contains-morse? line)
+  (if (regexp-match contains-morse-pattern line)
+    (let ([unmorsed (convert-morse (parse-morse line))])
+      (if (not (equal? unmorsed "")) unmorsed
+        #f))
+    #f))
 
 (define (convert-morse s)
   (let*
