@@ -1,10 +1,12 @@
 #lang racket
 
-(require "../config.rkt")
+(require "../config.rkt"
+         "../util/list-utils.rkt")
 
 (provide get-karma
          leaderboard
-         modify-karma)
+         modify-karma
+         random-karma)
 
 (define FILE_NAME (format "logs/~a.karma" CHAN))
 
@@ -45,9 +47,13 @@ Returns the karma associated with item
 (define (get-karma item)
   (if (equal? item "")
     #f
-    (format "~a has ~a karma point(s)"
-      item
-      (hash-ref karma (string->key item) key-not-found))))
+    (get-karma-string item (hash-ref karma (string->key item) key-not-found))))
+
+#|
+Returns the proper string for an item/karma pair
+|#
+(define (get-karma-string item karma)
+  (format "~a has ~a karma point(s)" item karma))
 
 #|
 Prints the leaderboard out, calling out-fn
@@ -74,3 +80,12 @@ Prints the leaderboard out, calling out-fn
                 (caaddr sorted)
                 (cdaddr sorted))))
     (out-fn "not enough items for a leaderboard")))
+
+#|
+Returns the karma associated with a random item
+|#
+(define (random-karma)
+  (if (zero? (hash-count karma))
+    "no items in karma table, use ++ and -- to assign karma to things!"
+    (let ([item (pick-random (hash->list karma))])
+      (get-karma-string (car item) (cdr item)))))

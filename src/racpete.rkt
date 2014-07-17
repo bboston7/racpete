@@ -116,6 +116,7 @@ Handles incoming user irc commands
       ; Karma commands
       [(string-starts-with? msg ".karma ") (write-to-channel (get-karma (substring msg 7)))]
       [(equal? msg ".karma") (leaderboard write-to-channel)]
+      [(equal? msg ".rkarma") (write-to-channel (random-karma))]
       [(string-starts-with? msg "++") (modify-karma (substring msg 2) 'incr)]
       [(string-ends-with? msg "++") (modify-karma
                                       (substring msg 0 (- (string-length msg) 2))
