@@ -186,6 +186,7 @@ Handles searching youtube
 (module* main #f
   (start-stimulator
     (list handle-link-me
+          (λ () (write-to-channel (random-karma)))
           (λ () (what-would-say NICK
                                 quotes
                                 (λ (x) (write-to-channel (chop-token x)))))
