@@ -84,6 +84,7 @@ Handles incoming user irc commands
       [(equal? ".q" msg) (write-to-channel (pick-random quotes))]
       [(equal? ".kwanzaa" msg) (write-to-channel (compute-kwanzaa-str))]
       [(equal? ".link me" msg) (handle-link-me)]
+      [(string-starts-with? msg ".image ") (handle-image-query msg)]
       [(string-starts-with? msg ".c ") (write-to-channel (convert-base-args (cdr (string-split msg))))]
       [(string-starts-with? msg "tell me about ") (write-to-channel (learn-about msg quotes))]
       [(string-starts-with? msg ".rx ") (egrep msg quotes write-to-channel)]
@@ -184,6 +185,12 @@ Handles searching youtube
 |#
 (define (handle-youtube-search msg)
   (thread (lambda () (query-youtube (substring msg 4) write-to-channel))))
+
+#|
+Handles searching for images
+|#
+(define (handle-image-query msg)
+  (thread (lambda () (query-image (substring msg 6) write-to-channel))))
 
 (module* main #f
   (start-stimulator
