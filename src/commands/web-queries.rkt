@@ -174,7 +174,7 @@ Do an image search!
       (fn (string-append "no results for " query))
       ; TODO: Make Petebot select a random image of the first few?
       (let ([item (car (from-nested-hash res (list 'responseData 'results)))])
-        (fn (hash-ref item 'url))))))
+        (fn (hash-ref item 'unescapedUrl))))))
 
 
 #|
