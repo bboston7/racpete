@@ -195,7 +195,6 @@ Handles searching for images
 (module* main #f
   (start-stimulator
     (list handle-link-me
-          (λ () (write-to-channel "Lopez--"))
           (λ () (write-to-channel (random-karma)))
           (λ () (what-would-say NICK
                                 quotes
