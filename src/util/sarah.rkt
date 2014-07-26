@@ -80,7 +80,7 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
 
 ;; Scanner for sarahpolanski
  ; matches all input
-(define scanner-rp
+(define scanner-sp
   (compose reverse string->list))
 
 ;; Parser: returns #f on parsing failure
@@ -391,7 +391,7 @@ This is sarah, an s-expression based language that pete recognizes and can evalu
 
 ;; parses sarahpolanski and attempts to run it
 (define (try-sp s)
-  (let* ([cs (scanner-rp s)]
+  (let* ([cs (scanner-sp s)]
          [ast (with-handlers
                 ([exn:fail? (lambda (exn) #f)])
                 (parse-sp cs))])
