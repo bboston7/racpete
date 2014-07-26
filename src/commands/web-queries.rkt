@@ -14,6 +14,7 @@
            [btc->usd-string-async (-> (-> (or/c boolean? string?) any)
                                       thread?)]
            [query-google (-> string? (-> (or/c boolean? string?) any) any)]
+           [query-image (-> string? (-> (or/c boolean? string?) any) any)]
            [query-wikipedia (-> string? (or/c boolean? pair?))]
            [query-wikipedia-async (-> string? (-> string? any) thread?)]
            [query-youtube (-> string? (-> (or/c boolean? string?) any) any)]
@@ -24,6 +25,7 @@
 (define BASH_BASE "http://bash.org/?")
 (define BASH_RAND "http://bash.org/?random")
 (define BITSTAMP_TICKER "https://www.bitstamp.net/api/ticker/")
+(define IMAGE_SEARCH_BASE "http://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=")
 (define GOOGLE_SEARCH_BASE
   (if (and GOOGLE_API_KEY GOOGLE_SEARCH_CX)
     (string-append
@@ -162,6 +164,17 @@ Parameters
               (from-nested-hash item (list 'snippet 'title))
               " - https://www.youtube.com/watch?v="
               (from-nested-hash item (list 'id 'videoId))))))))
+
+#|
+Do an image search!
+|#
+(define (query-image query fn)
+  (let ([res (query-json-service (string-append IMAGE_SEARCH_BASE query))])
+    (if (empty? (from-nested-hash res (list 'responseData 'results)))
+      (fn (string-append "no results for " query))
+      ; TODO: Make Petebot select a random image of the first few?
+      (let ([item (car (from-nested-hash res (list 'responseData 'results)))])
+        (fn (hash-ref item 'originalContextUrl))))))
 
 
 #|
