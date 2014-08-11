@@ -1,7 +1,9 @@
 #lang racket
 
-(require "../config.rkt"
-         "../util/list-utils.rkt")
+(require math/statistics
+         "../config.rkt"
+         "../util/list-utils.rkt"
+         "../util/math-utils.rkt")
 
 (provide get-karma
          leaderboard
@@ -62,7 +64,8 @@ Prints the leaderboard out, calling out-fn
   (if (>= (hash-count karma) 3)
     (let* ([assoc-list (hash->list karma)]
            [sorted (sort assoc-list (λ (x y) (< (cdr x) (cdr y))))]
-           [best (take-right sorted 3)])
+           [best (take-right sorted 3)]
+           [points (map cdr sorted)])
       (out-fn (format
                 "Top 3: ~a (~a), ~a (~a), ~a (~a)"
                 (caaddr best)
@@ -78,7 +81,12 @@ Prints the leaderboard out, calling out-fn
                 (caadr sorted)
                 (cdadr sorted)
                 (caaddr sorted)
-                (cdaddr sorted))))
+                (cdaddr sorted)))
+      (out-fn (format
+                "Mean: ~a, Median: ~a, Mode: ~a"
+                (real->decimal-string (mean points))
+                (real->decimal-string (exact-median points))
+                (mode points))))
     (out-fn "not enough items for a leaderboard")))
 
 #|
