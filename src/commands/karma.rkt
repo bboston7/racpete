@@ -83,10 +83,11 @@ Prints the leaderboard out, calling out-fn
                 (caaddr sorted)
                 (cdaddr sorted)))
       (out-fn (format
-                "Mean: ~a, Median: ~a, Mode: ~a"
+                "Mean: ~a, Median: ~a, Mode: ~a, StdDev: ~a"
                 (real->decimal-string (mean points))
                 (real->decimal-string (exact-median points))
-                (mode points))))
+                (mode points)
+                (real->decimal-string (stddev points)))))
     (out-fn "not enough items for a leaderboard")))
 
 #|
