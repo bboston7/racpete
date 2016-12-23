@@ -42,7 +42,6 @@
       GOOGLE_API_KEY
       "&q=")
     #f))
-(define MT_GOX_TICKER "http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast")
 (define wikipedia-api-base "http://en.wikipedia.org/w/api.php?action=query&list=search&format=xml&srlimit=1&srsearch=")
 (define wikipedia-page-base "http://en.wikipedia.org/wiki/")
 
