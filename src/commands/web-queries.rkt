@@ -18,7 +18,8 @@
            [query-wikipedia (-> string? (or/c boolean? pair?))]
            [query-wikipedia-async (-> string? (-> string? any) thread?)]
            [query-youtube (-> string? (-> (or/c boolean? string?) any) any)]
-           [rand-bash (-> (-> string? any) thread?)]))
+           [rand-bash (-> (-> string? any) thread?)]
+           [query-coin-cap (-> string? (-> string? any) any)]))
 
 (permissive-xexprs #t)
 
@@ -44,6 +45,7 @@
     #f))
 (define wikipedia-api-base "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=1&srsearch=")
 (define wikipedia-page-base "https://en.wikipedia.org/wiki/")
+(define COINCAP_BASE "https://api.coinmarketcap.com/v1/ticker/")
 
 (define (exchange? exchange)
   (memq exchange '('bitstamp 'gox)))
@@ -167,6 +169,17 @@ Do an image search!
       ; TODO: Make Petebot select a random image of the first few?
       (let ([item (car (from-nested-hash res (list 'responseData 'results)))])
         (fn (hash-ref item 'unescapedUrl))))))
+
+#|
+Search for the price in USD of a cryptocurrency
+|#
+(define (query-coin-cap query fn)
+  (define res (query-json-service (string-append COINCAP_BASE query "/")))
+  (if (hash? res)
+    (fn (string-append "no results for " query))
+    (fn (string-append (hash-ref (car res) 'name)
+                       ": $"
+                       (hash-ref (car res) 'price_usd)))))
 
 
 #|

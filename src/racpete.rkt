@@ -104,6 +104,7 @@ Handles incoming user irc commands
                                                              write-to-channel)]
       [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
       [(string-starts-with? msg ".yt ") (handle-youtube-search msg)]
+      [(string-starts-with? msg ".cc ") (handle-coin-cap msg)]
       [(string-starts-with? msg ".kick ") (act-to-channel
                                             (string-append "kicks "
                                                            (substring msg 6)))]
@@ -185,6 +186,12 @@ Handles searching youtube
 |#
 (define (handle-youtube-search msg)
   (thread (lambda () (query-youtube (substring msg 4) write-to-channel))))
+
+#|
+Handles searching coin market cap
+|#
+(define (handle-coin-cap msg)
+  (thread (lambda () (query-coin-cap (substring msg 4) write-to-channel))))
 
 #|
 Handles searching for images
