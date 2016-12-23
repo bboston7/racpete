@@ -77,11 +77,7 @@ the value as a usd-string? or #f if the API call fails.
 (define (btc->usd-string exchange)
   (match exchange
     ['bitstamp (let ([res (query-json-service BITSTAMP_TICKER)])
-                 (string-append "$" (hash-ref res 'last)))]
-    ['gox (let ([res (query-json-service MT_GOX_TICKER)])
-            (if (equal? (hash-ref res 'result) "success")
-              (from-nested-hash res (list 'data 'last 'display))
-              #f))]))
+                 (string-append "$" (hash-ref res 'last)))]))
 
 #|
 Calls btc->usd-string in a new thread, then passes the result to fn
@@ -90,8 +86,7 @@ Returns immediately
 |#
 (define (btc->usd-string-async fn)
   (thread
-    (lambda () (fn (string-append "bitstamp: " (btc->usd-string 'bitstamp)))))
-  (thread (lambda () (fn (string-append "gox: " (btc->usd-string 'gox))))))
+    (lambda () (fn (string-append "bitstamp: " (btc->usd-string 'bitstamp))))))
 
 #|
 Given a query string, returns a cons cell with a snippet description and link
