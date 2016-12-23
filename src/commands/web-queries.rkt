@@ -42,8 +42,8 @@
       GOOGLE_API_KEY
       "&q=")
     #f))
-(define wikipedia-api-base "http://en.wikipedia.org/w/api.php?action=query&list=search&format=xml&srlimit=1&srsearch=")
-(define wikipedia-page-base "http://en.wikipedia.org/wiki/")
+(define wikipedia-api-base "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=1&srsearch=")
+(define wikipedia-page-base "https://en.wikipedia.org/wiki/")
 
 (define (exchange? exchange)
   (memq exchange '('bitstamp 'gox)))
@@ -97,18 +97,16 @@ On error, returns #f
 (define (query-wikipedia query)
   (if (equal? query "")
     #f
-    (let ([res (query-xml-service (string-append wikipedia-api-base (uri-encode
-                                                                  query)))])
-      (if (or (eq? (caaddr res) 'error)
-              (equal? (cadr (assoc 'totalhits (cadr (se-path* '(query) res)))) 
-                      "0"))
+    (let ([res (query-json-service (string-append wikipedia-api-base
+                                                   (uri-encode query)))])
+      (if (or (hash-has-key? res 'error)
+              (zero? (from-nested-hash res '(query searchinfo totalhits))))
         #f
-        (let ([data (cddar (cdaddr (cadddr (cadddr res))))])
-          (cons
-            (string-normalize-spaces
-              (strip-tags (cadr (assoc 'snippet data))))
-            (string-append wikipedia-page-base
-                           (uri-encode (cadr (assoc 'title data))))))))))
+        (let ([data (car (from-nested-hash res '(query search)))])
+          (cons (string-normalize-spaces
+                  (strip-tags (hash-ref data 'snippet)))
+                (string-append wikipedia-page-base
+                               (uri-encode (hash-ref data 'title)))))))))
 
 #|
 Calls query-wikipedia in a new thread with query, then passes the result to fn
