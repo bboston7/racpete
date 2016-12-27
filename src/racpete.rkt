@@ -104,7 +104,6 @@ Handles incoming user irc commands
       [urlres (handle-url-match urlres nick msg)]
       [(string-starts-with? msg ".w ") (query-wikipedia-async (substring msg 3)
                                                              write-to-channel)]
-      [(equal? ".btc" msg) (btc->usd-string-async write-to-channel)]
       [(string-starts-with? msg ".yt ") (handle-youtube-search msg)]
       [(string-starts-with? msg ".cc ") (handle-coin-cap msg)]
       [(string-starts-with? msg ".kick ") (act-to-channel

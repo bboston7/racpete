@@ -10,9 +10,6 @@
          "../util/string-utils.rkt")
 
 (provide (contract-out
-           [btc->usd-string (-> exchange? (or/c boolean? usd-string?))]
-           [btc->usd-string-async (-> (-> (or/c boolean? string?) any)
-                                      thread?)]
            [query-google (-> string? (-> (or/c boolean? string?) any) any)]
            [query-image (-> string? (-> (or/c boolean? string?) any) any)]
            [query-wikipedia (-> string? (or/c boolean? pair?))]
@@ -25,7 +22,6 @@
 
 (define BASH_BASE "http://bash.org/?")
 (define BASH_RAND "http://bash.org/?random")
-(define BITSTAMP_TICKER "https://www.bitstamp.net/api/ticker/")
 (define IMAGE_SEARCH_BASE "http://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=")
 (define GOOGLE_SEARCH_BASE
   (if (and GOOGLE_API_KEY GOOGLE_SEARCH_CX)
@@ -47,9 +43,6 @@
 (define wikipedia-page-base "https://en.wikipedia.org/wiki/")
 (define COINCAP_BASE "https://api.coinmarketcap.com/v1/ticker/")
 
-(define (exchange? exchange)
-  (memq exchange '('bitstamp 'gox)))
-
 (define (usd-string? str)
   (regexp-match? #px"^\\$[0-9]+\\.[0-9]{2}$" str))
 
@@ -70,24 +63,6 @@ Asynchronously grabs a random link from bash.org and calls out with it
   (thread (lambda ()
             (out (string-append BASH_BASE (fn (scrape-html BASH_RAND)))))))
 
-
-#|
-Finds the current cost of a bitcoin according to the MtGox ticker and returns
-the value as a usd-string? or #f if the API call fails.
-|#
-(define (btc->usd-string exchange)
-  (match exchange
-    ['bitstamp (let ([res (query-json-service BITSTAMP_TICKER)])
-                 (string-append "$" (hash-ref res 'last)))]))
-
-#|
-Calls btc->usd-string in a new thread, then passes the result to fn
-
-Returns immediately
-|#
-(define (btc->usd-string-async fn)
-  (thread
-    (lambda () (fn (string-append "bitstamp: " (btc->usd-string 'bitstamp))))))
 
 #|
 Given a query string, returns a cons cell with a snippet description and link
