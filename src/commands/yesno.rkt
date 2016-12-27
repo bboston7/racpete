@@ -21,7 +21,6 @@ This module provides the functions for the random fortune teller command.
     "how should I know?"
     (lambda ()
       (string-append (pick-random (current-nicks)) ": ^"))
-    "ask the danimal"
     "probably"
     "signs point to yes"
     "signs point to no"
