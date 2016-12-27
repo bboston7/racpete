@@ -1,3 +1,6 @@
+# 0.1.1-dev #
+* Corrected minimum supported racket version in README
+
 # 0.1.0 #
 * Added versioning
 * Removed .btc

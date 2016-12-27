@@ -4,7 +4,7 @@ racpete is the raddest, baddest irc bot ever written entirely in Racket!
 
 How do I use racpete?
 -----------------------------------
-- racpete is primarily tested on Linux machines running racket v5.3.6 or higher,
+- racpete is primarily tested on Linux machines running racket v6.1 or higher,
   so a good first step is to install the latest racket runtime.
 - Clone the repo onto the machine you want the bot to run on.
 - In ```/src``` edit ```config.rkt``` to contain appropriate values, like
