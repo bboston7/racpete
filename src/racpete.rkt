@@ -27,6 +27,8 @@
   "util/urltilities.rkt"
 )
 
+(define VERSION "0.1.0-dev")
+
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr
 is urls from the current channel log
@@ -109,6 +111,7 @@ Handles incoming user irc commands
                                             (string-append "kicks "
                                                            (substring msg 6)))]
       [(equal? ".bash" msg) (rand-bash write-to-channel)]
+      [(equal? ".version" msg) (write-to-channel VERSION)]
       [(equal? ".roulette" msg) (act-to-channel
                                   (string-append "kicks " (pick-random (current-nicks))))]
       [(equal? ".ballsohard" msg) (write-to-channel (ball-so-hard))]
