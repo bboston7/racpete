@@ -4,6 +4,7 @@
 
 (define: HOST : String "example.server.com")
 (define: PORT : Positive-Integer 6667)
+(define SSL #f)
 (define: NICK : String "racpete")
 (define: IDENT : String "racpete")
 (define: REALNAME : String "racpete")

@@ -27,7 +27,7 @@
   "util/urltilities.rkt"
 )
 
-(define VERSION "0.1.1-dev")
+(define VERSION "0.2.0-dev")
 
 #|
 Builds a pair of lists.  The car is quotes from the current channel log, the cdr

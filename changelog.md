@@ -1,5 +1,6 @@
-# 0.1.1-dev #
+# 0.2.0-dev #
 * Corrected minimum supported racket version in README
+* Added SSL support (requires config file change)
 
 # 0.1.0 #
 * Added versioning

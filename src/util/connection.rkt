@@ -1,7 +1,8 @@
 #!/usr/bin/racket
 #lang typed/racket
 
-(require "../config.rkt"
+(require typed/openssl
+         "../config.rkt"
          "names-manager.rkt"
 )
 
@@ -197,7 +198,9 @@ from our computer
 |#
 (: connect (-> Any))
 (define (connect)
-  (set!-values (input output) (tcp-connect HOST PORT))
+  (if SSL
+    (set!-values (input output) (ssl-connect HOST PORT))
+    (set!-values (input output) (tcp-connect HOST PORT)))
   (identify)
   (join))
 
