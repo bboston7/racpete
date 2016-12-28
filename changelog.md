@@ -1,6 +1,7 @@
 # 0.2.0-dev #
 * Corrected minimum supported racket version in README
 * Added SSL support (requires config file change)
+* Added (incomplete) IRC command reference
 
 # 0.1.0 #
 * Added versioning
