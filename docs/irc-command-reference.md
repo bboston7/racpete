@@ -25,9 +25,9 @@ These commands use racpete's channel logs.  They'll improve as racpete idles in 
 
 ## Karma Commands ##
 racpete also contains a karma tracking system.
-* `karma <item>` -- Returns the karma of `<item>`
-* `karma` -- Prints a karma leaderboard
-* `rkarma` -- Returns the karma of a random item
+* `.karma <item>` -- Returns the karma of `<item>`
+* `.karma` -- Prints a karma leaderboard
+* `.rkarma` -- Returns the karma of a random item
 * `<item>++` or `++<item>` -- Increments the karma of `<item>` by one
 * `<item>--` or `--<item>` -- Decrements the karma of `<item>` by one
 
