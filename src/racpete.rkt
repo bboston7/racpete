@@ -202,12 +202,13 @@ Handles searching for images
   (thread (lambda () (query-image (substring msg 6) write-to-channel))))
 
 (module* main #f
-  (start-stimulator
-    (list handle-link-me
-          (λ () (write-to-channel (random-karma)))
-          (λ () (what-would-say NICK
-                                quotes
-                                (λ (x) (write-to-channel (chop-token x)))))
-          (λ () (write-to-channel (chop-token (pick-random quotes))))))
+  (unless (zero? AVG_STIM_FREQ)
+    (start-stimulator
+      (list handle-link-me
+            (λ () (write-to-channel (random-karma)))
+            (λ () (what-would-say NICK
+                                  quotes
+                                  (λ (x) (write-to-channel (chop-token x)))))
+            (λ () (write-to-channel (chop-token (pick-random quotes)))))))
   (start-pete command-handler priv-command-handler))
 

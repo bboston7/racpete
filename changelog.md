@@ -2,6 +2,7 @@
 * Corrected minimum supported racket version in README
 * Added SSL support (requires config file change)
 * Added (incomplete) IRC command reference
+* Added configurable stimulation frequency (requires config file change)
 
 # 0.1.0 #
 * Added versioning

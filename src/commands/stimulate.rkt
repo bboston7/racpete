@@ -1,19 +1,25 @@
 #lang typed/racket
 
-(require "../util/connection.rkt"
+(require "../config.rkt"
+         "../util/connection.rkt"
          "../util/list-utils.rkt")
 
 (provide ping-stimulator
          start-stimulator)
 
-; Stimulate conversation after an hour of inactivity (on average)
-(define STIMULATION_TIME_MAX_S (* 2 60 60))
+; Stimulate conversation after (STIMULATION_TIME_S / 2) seconds on average
+(define STIMULATION_TIME_MAX_S (* 2 60 AVG_STIM_FREQ))
 
 ; Time in seconds for next stimulation (Add 10 to give bot time to connect)
-(define next-stim (+ (current-seconds) (random STIMULATION_TIME_MAX_S) 10))
+(define next-stim
+  (if (zero? AVG_STIM_FREQ)
+    0
+    (+ (current-seconds) (random STIMULATION_TIME_MAX_S) 10)))
 
 ; Set the time for the next-stim (Add 2 to avoid negative sleep)
-(define (ping-stimulator) (set! next-stim (+ (current-seconds) (random STIMULATION_TIME_MAX_S))))
+(define (ping-stimulator)
+  (unless (zero? AVG_STIM_FREQ)
+    (set! next-stim (+ (current-seconds) (random STIMULATION_TIME_MAX_S)))))
 
 #|
 Starts the conversation stimulator.  After STIMULATION_TIME_S seconds have

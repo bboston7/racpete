@@ -14,3 +14,7 @@
 
 (define: GOOGLE_API_KEY : String "")
 (define GOOGLE_SEARCH_CX #f)
+
+; Stimulate conversation after this number of minutes on average.  Set to zero
+; to disable conversation stimulation
+(define AVG_STIM_FREQ 60)
